@@ -1,8 +1,13 @@
 package com.impressiveinteractive.synapse.exception;
 
+import com.impressiveinteractive.synapse.exception.runtime.RuntimeIOException;
+import com.impressiveinteractive.synapse.exception.wrapped.WrappedIOException;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.runners.MockitoJUnitRunner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -10,12 +15,13 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.stream.Stream;
 
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.instanceOf;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertThat;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.when;
 
+@RunWith(MockitoJUnitRunner.class)
 @SuppressWarnings({"ThrowableInstanceNeverThrown", "ThrowableResultOfMethodCallIgnored"})
 public class ExceptionsTest {
 
@@ -23,6 +29,9 @@ public class ExceptionsTest {
 
     @Rule
     public ExpectedException exception = ExpectedException.none();
+
+    @Mock
+    private MethodReferences references;
 
     private final FileNotFoundException cause = new FileNotFoundException("I couldn't find ~/Desktop/secrets");
 
@@ -51,63 +60,121 @@ public class ExceptionsTest {
     }
 
     @Test
-    public void wrapChecked() throws Exception {
-        assertThat(Exceptions.wrapChecked(new NullPointerException()), is(instanceOf(NullPointerException.class)));
+    public void wrapConsumer() throws Exception {
+        doThrow(new IOException()).when(references).consume(anyString());
 
-        assertThat(Exceptions.wrapChecked(new IOException()), is(instanceOf(RuntimeIOException.class)));
-        assertThat(Exceptions.wrapChecked(new FileNotFoundException()), is(instanceOf(RuntimeIOException.class)));
+        exception.expect(RuntimeIOException.class);
 
-        assertThat(Exceptions.wrapChecked(new InterruptedException()), is(instanceOf(RuntimeInterruptedException.class)));
-
-        assertThat(Exceptions.wrapChecked(new Exception()), is(instanceOf(WrappedCheckedException.class)));
-    }
-
-    private void consume(String consumable) throws IOException {
-        throw Exceptions.formatMessage(IOException::new, "I don't like this {}.", consumable);
+        Stream.of("Apple", "Orange")
+                .forEach(Exceptions.wrapExceptional(references::consume, RuntimeIOException::new));
     }
 
     @Test
-    public void wrapConsumer() throws Exception {
-        exception.expect(IOException.class);
+    public void wrapConsumer_andUnwrap() throws Exception {
+        IOException expected = new IOException();
+        doThrow(expected).when(references).consume(anyString());
+
+        exception.expect(is(expected));
 
         try {
             Stream.of("Apple", "Orange")
-                    .forEach(Exceptions.wrap(this::consume));
-        } catch (RuntimeIOException e) {
+                    .forEach(Exceptions.wrapExceptional(references::consume, WrappedIOException::new));
+        } catch (WrappedIOException e) {
             e.unwrap(); // Throws original IOException
         }
     }
 
-    private String supply() throws IOException {
-        throw Exceptions.formatMessage(IOException::new, "My tummy hurts.");
+    @Test
+    public void wrapConsumer_RuntimeException() throws Exception {
+        RuntimeException expected = new RuntimeException();
+        doThrow(expected).when(references).consume(anyString());
+
+        exception.expect(is(expected));
+
+        Stream.of("Apple", "Orange")
+                .forEach(Exceptions.wrapExceptional(references::consume, RuntimeIOException::new));
     }
 
     @Test
     public void wrapSupplier() throws Exception {
-        exception.expect(IOException.class);
+        when(references.supply()).thenThrow(new IOException());
+
+        exception.expect(RuntimeIOException.class);
+
+        Stream.generate(Exceptions.wrapExceptional(references::supply, RuntimeIOException::new))
+                .forEach(LOGGER::info);
+    }
+
+    @Test
+    public void wrapSupplier_andUnwrap() throws Exception {
+        IOException expected = new IOException();
+        when(references.supply()).thenThrow(expected);
+
+        this.exception.expect(is(expected));
 
         try {
-            Stream.generate(Exceptions.wrap(this::supply))
+            Stream.generate(Exceptions.wrapExceptional(references::supply, WrappedIOException::new))
                     .forEach(LOGGER::info);
-        } catch (RuntimeIOException e) {
+        } catch (WrappedIOException e) {
             e.unwrap(); // Throws original IOException
         }
     }
 
-    private String transform(String consumable) throws IOException {
-        throw Exceptions.formatMessage(IOException::new, "I don't like this {}.", consumable);
+    @Test
+    public void wrapSupplier_RuntimeException() throws Exception {
+        RuntimeException expected = new RuntimeException();
+        when(references.supply()).thenThrow(expected);
+
+        exception.expect(is(expected));
+
+        Stream.generate(Exceptions.wrapExceptional(references::supply, RuntimeIOException::new))
+                .forEach(LOGGER::info);
     }
 
     @Test
     public void wrapFunction() throws Exception {
-        exception.expect(IOException.class);
+        when(references.transform(anyString())).thenThrow(new IOException());
+
+        exception.expect(RuntimeIOException.class);
+
+        Stream.of("Apple", "Orange")
+                .map(Exceptions.wrapExceptional(references::transform, RuntimeIOException::new))
+                .forEach(LOGGER::info);
+    }
+
+    @Test
+    public void wrapFunction_andUnwrap() throws Exception {
+        IOException expected = new IOException();
+        when(references.transform(anyString())).thenThrow(expected);
+
+        exception.expect(is(expected));
 
         try {
             Stream.of("Apple", "Orange")
-                    .map(Exceptions.wrap(this::transform))
+                    .map(Exceptions.wrapExceptional(references::transform, WrappedIOException::new))
                     .forEach(LOGGER::info);
-        } catch (RuntimeIOException e) {
+        } catch (WrappedIOException e) {
             e.unwrap(); // Throws original IOException
         }
+    }
+
+    @Test
+    public void wrapFunction_RuntimeException() throws Exception {
+        RuntimeException expected = new RuntimeException();
+        when(references.transform(anyString())).thenThrow(expected);
+
+        exception.expect(is(expected));
+
+        Stream.of("Apple", "Orange")
+                .map(Exceptions.wrapExceptional(references::transform, RuntimeIOException::new))
+                .forEach(LOGGER::info);
+    }
+
+    private interface MethodReferences {
+        void consume(String consumable) throws IOException;
+
+        String supply() throws IOException;
+
+        String transform(String consumable) throws IOException;
     }
 }

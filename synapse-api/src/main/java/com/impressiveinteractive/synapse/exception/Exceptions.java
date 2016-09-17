@@ -3,7 +3,6 @@ package com.impressiveinteractive.synapse.exception;
 import org.slf4j.helpers.FormattingTuple;
 import org.slf4j.helpers.MessageFormatter;
 
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -83,95 +82,116 @@ public final class Exceptions {
     }
 
     /**
-     * Wraps checked exceptions into a {@link WrappedCheckedException}. The type of {@link WrappedCheckedException} is
-     * returned depends on the given exception type. Unchecked exceptions pass right through without being wrapped.
-     *
-     * @param e The exception to make runtime friendly.
-     * @return The resulting {@link RuntimeException}.
-     */
-    public static RuntimeException wrapChecked(Exception e) {
-        if (e instanceof RuntimeException) {
-            return (RuntimeException) e;
-        } else if (e instanceof IOException) {
-            return new RuntimeIOException((IOException) e);
-        } else if (e instanceof InterruptedException) {
-            return new RuntimeInterruptedException((InterruptedException) e);
-        }
-        return new WrappedCheckedException(e);
-    }
-
-    /**
-     * Wrap the given {@link ExceptionalConsumer} in a regular {@link Consumer} that will
-     * {@link #wrapChecked(Exception) wrap checked exceptions} into their runtime equivalent. Can be used to have
-     * checked exceptions in lambda apis like so:
+     * Wrap the given {@link ExceptionalConsumer} in a regular {@link Consumer}. When the exceptional consumer throws
+     * the checked exception type, it will be wrapped and thrown as the {@link RuntimeException} produced by the given
+     * wrapper. Example:
      * <pre>
+     * // The culprit
      * void consume(String consumable) throws IOException;
      *
+     * ...
+     *
+     * Stream.of("Apple", "Orange")
+     *         .forEach(Exceptions.wrap(this::consume, RuntimeIOException::new));
+     * </pre>
+     * <p>
+     * If you want to rethrow the original checked exception, you can do this:
+     * <pre>
      * try {
      *     Stream.of("Apple", "Orange")
-     *             .forEach(Exceptions.wrap(this::consume));
-     * } catch (RuntimeIOException e) {
+     *             .forEach(Exceptions.wrap(this::consume, WrappedIOException::new));
+     * } catch (WrappedIOException e) {
      *     e.unwrap(); // Throws original IOException
      * }
      * </pre>
      *
      * @param consumer The consumer throwing checked exceptions.
      * @param <T>      The type of object consumed by the consumer.
-     * @param <E>      The checked exception type thrown by the consumer.
-     * @return A {@link Consumer} that uses {@link #wrapChecked(Exception)} and therefore throws no checked exceptions.
+     * @param <E>      The checked exception type thrown by the {@link ExceptionalConsumer} and wrapped by the wrapper.
+     * @return A regular {@link Consumer}.
      */
-    public static <T, E extends Exception> Consumer<T> wrap(ExceptionalConsumer<T, E> consumer) {
+    @SuppressWarnings("unchecked")
+    public static <T, E extends Exception> Consumer<T> wrapExceptionalConsumer(
+            ExceptionalConsumer<T, E> consumer,
+            Function<E, ? extends RuntimeException> wrapper) {
         return t -> {
             try {
                 consumer.accept(t);
+            } catch (RuntimeException e) {
+                throw e;
             } catch (Exception e) {
-                throw wrapChecked(e);
+                throw wrapper.apply((E) e);
             }
         };
     }
 
     /**
-     * Wrap the given {@link ExceptionalSupplier} in a regular {@link Supplier} that will
-     * {@link #wrapChecked(Exception) wrap checked exceptions} into their runtime equivalent. Can be used to have
-     * checked exceptions in lambda apis like so:
+     * Wrap the given {@link ExceptionalSupplier} in a regular {@link Supplier}. When the exceptional supplier throws
+     * the checked exception type, it will be wrapped and thrown as the {@link RuntimeException} produced by the given
+     * wrapper. Example:
      * <pre>
+     * // The culprit
      * String supply() throws IOException;
      *
+     * ...
+     *
+     * Stream.generate(Exceptions.wrap(this::supply, RuntimeIOException::new))
+     *         .forEach(LOGGER::info);
+     * </pre>
+     * <p>
+     * If you want to rethrow the original checked exception, you can do this:
+     * <pre>
      * try {
-     *     Stream.generate(Exceptions.wrap(this::supply))
+     *     Stream.generate(Exceptions.wrap(this::supply, WrappedIOException::new))
      *             .forEach(LOGGER::info);
-     * } catch (RuntimeIOException e) {
+     * } catch (WrappedIOException e) {
      *     e.unwrap(); // Throws original IOException
      * }
      * </pre>
      *
      * @param supplier The supplier throwing checked exceptions.
      * @param <T>      The type of object supplier by the supplier.
-     * @param <E>      The checked exception type thrown by the supplier.
-     * @return A {@link Supplier} that uses {@link #wrapChecked(Exception)} and therefore throws no checked exceptions.
+     * @param <E>      The checked exception type thrown by the {@link ExceptionalSupplier} and wrapped by the wrapper.
+     * @return A regular {@link Supplier}.
      */
-    public static <T, E extends Exception> Supplier<T> wrap(ExceptionalSupplier<T, E> supplier) {
+    @SuppressWarnings("unchecked")
+    public static <T, E extends Exception> Supplier<T> wrapExceptionalSupplier(
+            ExceptionalSupplier<T, E> supplier,
+            Function<E, ? extends RuntimeException> wrapper) {
         return () -> {
             try {
                 return supplier.get();
+            } catch (RuntimeException e) {
+                throw e;
             } catch (Exception e) {
-                throw wrapChecked(e);
+                throw wrapper.apply((E) e);
             }
         };
     }
 
     /**
-     * Wrap the given {@link ExceptionalFunction} in a regular {@link Function} that will
-     * {@link #wrapChecked(Exception) wrap checked exceptions} into their runtime equivalent. Can be used to have
-     * checked exceptions in lambda apis like so:
+     * Wrap the given {@link ExceptionalFunction} in a regular {@link Function}. When the exceptional function throws
+     * the checked exception type, it will be wrapped and thrown as the {@link RuntimeException} produced by the given
+     * wrapper. Example:
      * <pre>
+     * // The culprit
      * String transform(String consumable) throws IOException;
      *
+     * ...
+     *
+     *
+     * Stream.of("Apple", "Orange")
+     *         .map(Exceptions.wrap(this::transform, RuntimeIOException::new))
+     *         .forEach(LOGGER::info);
+     * </pre>
+     * <p>
+     * If you want to rethrow the original checked exception, you can do this:
+     * <pre>
      * try {
      *     Stream.of("Apple", "Orange")
-     *             .map(Exceptions.wrap(this::transform))
+     *             .map(Exceptions.wrap(this::transform, WrappedIOException::new))
      *             .forEach(LOGGER::info);
-     * } catch (RuntimeIOException e) {
+     * } catch (WrappedIOException e) {
      *     e.unwrap(); // Throws original IOException
      * }
      * </pre>
@@ -179,17 +199,49 @@ public final class Exceptions {
      * @param function The function throwing checked exceptions.
      * @param <I>      The input argument type for the function.
      * @param <O>      The return type for the function.
-     * @param <E>      The checked exception type thrown by the function.
-     * @return A {@link Function} that uses {@link #wrapChecked(Exception)} and therefore throws no checked exceptions.
+     * @param <E>      The checked exception type thrown by the {@link ExceptionalFunction}.
+     * @return A regular {@link Function}.
      */
-    public static <I, O, E extends Exception> Function<I, O> wrap(ExceptionalFunction<I, O, E> function) {
+    @SuppressWarnings("unchecked")
+    public static <I, O, E extends Exception> Function<I, O> wrapExceptionalFunction(
+            ExceptionalFunction<I, O, E> function,
+            Function<E, ? extends RuntimeException> wrapper) {
         return i -> {
             try {
                 return function.apply(i);
+            } catch (RuntimeException e) {
+                throw e;
             } catch (Exception e) {
-                throw wrapChecked(e);
+                throw wrapper.apply((E) e);
             }
         };
+    }
+
+    /**
+     * @see #wrapExceptionalConsumer(ExceptionalConsumer, Function)
+     */
+    public static <T, E extends Exception> Consumer<T> wrapExceptional(
+            ExceptionalConsumer<T, E> consumer,
+            Function<E, ? extends RuntimeException> wrapper) {
+        return wrapExceptionalConsumer(consumer, wrapper);
+    }
+
+    /**
+     * @see #wrapExceptionalSupplier(ExceptionalSupplier, Function)
+     */
+    public static <T, E extends Exception> Supplier<T> wrapExceptional(
+            ExceptionalSupplier<T, E> supplier,
+            Function<E, ? extends RuntimeException> wrapper) {
+        return wrapExceptionalSupplier(supplier, wrapper);
+    }
+
+    /**
+     * @see #wrapExceptionalFunction(ExceptionalFunction, Function)
+     */
+    public static <I, O, E extends Exception> Function<I, O> wrapExceptional(
+            ExceptionalFunction<I, O, E> function,
+            Function<E, ? extends RuntimeException> wrapper) {
+        return wrapExceptionalFunction(function, wrapper);
     }
 
     private static <T extends Throwable> T reduceStackTrace(T exception) {
