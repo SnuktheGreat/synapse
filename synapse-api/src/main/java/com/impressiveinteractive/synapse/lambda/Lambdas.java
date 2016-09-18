@@ -1,57 +1,131 @@
 package com.impressiveinteractive.synapse.lambda;
 
-import com.impressiveinteractive.synapse.exception.Exceptions;
-
-import java.util.ArrayList;
+import java.lang.invoke.MethodType;
+import java.lang.invoke.SerializedLambda;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
+/**
+ * Utility class for lambdas. This class is mostly built arround the {@link SerializableLambda}, which can be used to
+ * extract additional information about where the lambda is created, what kind of lambda it is, etc.
+ */
 public final class Lambdas {
-
-    private static final Pattern SIGNATURE_PATTERN = Pattern.compile("\\((?<arguments>(L[\\w_/]+;)*)\\)(?<return>(L[\\w_/]+;|\\w))");
-    private static final Pattern TYPE_PATTERN = Pattern.compile("L(?<type>[\\w_/]+);");
 
     private Lambdas() {
         throw new AssertionError("Calling private constructor. No instances should be created from this class.");
     }
 
-    public static Class<?> getRawReturnType(SerializableLambda lambda) {
-        Matcher signatureMatcher = matchSignature(lambda);
+    /**
+     * Create a {@link SerializableConsumer}. The method itself does nothing, but because the parameter is of the
+     * {@link SerializableConsumer} type, it will return any lambda as such.
+     *
+     * @param consumer The {@link SerializableConsumer}.
+     * @param <T>      The type of the input to the operation.
+     * @return The {@link SerializableConsumer}.
+     * @see #serializable(SerializableConsumer)
+     */
+    public static <T> SerializableConsumer<T> serializableConsumer(SerializableConsumer<T> consumer) {
+        return consumer;
+    }
 
-        String returnType = signatureMatcher.group("return");
-        Matcher typeMatcher = TYPE_PATTERN.matcher(returnType);
-        if (!typeMatcher.matches()) {
-            throw Exceptions.format(IllegalArgumentException::new,
-                    "Could extract type from {} ({}).", lambda, returnType);
-        }
-        try {
-            return Class.forName(typeMatcher.group("type").replace('/', '.'));
-        } catch (ClassNotFoundException e) {
-            throw new IllegalStateException("Impossible! Could not get return type from the fully classified classname.", e);
-        }
+    /**
+     * Create a {@link SerializableFunction}. The method itself does nothing, but because the parameter is of the
+     * {@link SerializableFunction} type, it will return any lambda as such.
+     *
+     * @param function The {@link SerializableFunction}.
+     * @param <T>      The type of the input to the function.
+     * @param <R>      The type of the result of the function.
+     * @return The {@link SerializableFunction}.
+     */
+    public static <T, R> SerializableFunction<T, R> serializableFunction(SerializableFunction<T, R> function) {
+        return function;
     }
-    public static List<Class<?>> getRawArgumentTypes(SerializableLambda lambda) {
-        Matcher signatureMatcher = matchSignature(lambda);
-        String arguments = signatureMatcher.group("arguments");
-        Matcher typeMatcher = TYPE_PATTERN.matcher(arguments);
-        List<Class<?>> argumentTypes = new ArrayList<>();
-        while (typeMatcher.find()) {
-            try {
-                argumentTypes.add(Class.forName(typeMatcher.group("type").replace('/', '.')));
-            } catch (ClassNotFoundException e) {
-                throw new IllegalStateException("Impossible! Could not get argument type from the fully classified classname.", e);
-            }
-        }
-        return argumentTypes;
+
+    /**
+     * Create a {@link SerializableSupplier}. The method itself does nothing, but because the parameter is of the
+     * {@link SerializableSupplier} type, it will return any lambda as such.
+     *
+     * @param supplier The {@link SerializableSupplier}.
+     * @param <T>      The type of results supplied by the supplier.
+     * @return The {@link SerializableSupplier}.
+     */
+    public static <T> SerializableSupplier<T> serializableSupplier(SerializableSupplier<T> supplier) {
+        return supplier;
     }
-    private static Matcher matchSignature(SerializableLambda lambda) {
-        String methodType = lambda.serialized().getInstantiatedMethodType();
-        Matcher signatureMatcher = SIGNATURE_PATTERN.matcher(methodType);
-        if (!signatureMatcher.matches()) {
-            throw Exceptions.format(IllegalArgumentException::new,
-                    "Could not find signature on {} ({}).", lambda, methodType);
-        }
-        return signatureMatcher;
+
+    /**
+     * Short for {@link #serializableConsumer(SerializableConsumer)}. Use the long version if the type of lambda given
+     * causes signature clashes with any of the other {@code serializable(...)} methods.
+     *
+     * @param consumer The {@link SerializableConsumer}.
+     * @param <T>      The type of the input to the operation.
+     * @return The {@link SerializableConsumer}.
+     */
+    public static <T> SerializableConsumer<T> serializable(SerializableConsumer<T> consumer) {
+        return serializableConsumer(consumer);
+    }
+
+    /**
+     * Short for {@link #serializableFunction(SerializableFunction)}. Use the long version if the type of lambda given
+     * causes signature clashes with any of the other {@code serializable(...)} methods.
+     *
+     * @param function The {@link SerializableFunction}.
+     * @param <T>      The type of the input to the function.
+     * @param <R>      The type of the result of the function.
+     * @return The {@link SerializableFunction}.
+     */
+    public static <T, R> SerializableFunction<T, R> serializable(SerializableFunction<T, R> function) {
+        return serializableFunction(function);
+    }
+
+    /**
+     * Short for {@link #serializableSupplier(SerializableSupplier)}. Use the long version if the type of lambda given
+     * causes signature clashes with any of the other {@code serializable(...)} methods.
+     *
+     * @param supplier The {@link SerializableSupplier}.
+     * @param <T>      The type of results supplied by the supplier.
+     * @return The {@link SerializableSupplier}.
+     */
+    public static <T> SerializableSupplier<T> serializable(SerializableSupplier<T> supplier) {
+        return serializableSupplier(supplier);
+    }
+
+    /**
+     * Get the raw return type for the given {@link SerializedLambda}.
+     *
+     * @param lambda The {@link SerializedLambda}.
+     * @return The raw return type for the given {@link SerializedLambda}.
+     * @see SerializableLambda#serialized()
+     */
+    public static Class<?> getRawReturnType(SerializedLambda lambda) {
+        MethodType methodType = MethodType.fromMethodDescriptorString(lambda.getImplMethodSignature(),
+                Lambdas.class.getClassLoader());
+        return methodType.returnType();
+    }
+
+    /**
+     * Get the raw type for all parameters on the given {@link SerializedLambda}.
+     *
+     * @param lambda The {@link SerializedLambda}.
+     * @return The raw type for all parameters on the given {@link SerializedLambda}.
+     * @see SerializableLambda#serialized()
+     */
+    public static List<Class<?>> getRawParameterTypes(SerializedLambda lambda) {
+        MethodType methodType = MethodType.fromMethodDescriptorString(lambda.getImplMethodSignature(),
+                Lambdas.class.getClassLoader());
+        return methodType.parameterList();
+    }
+
+    /**
+     * Get the raw parameter type for the parameter at index {@code i} on the given {@link SerializedLambda}.
+     *
+     * @param lambda The {@link SerializedLambda}.
+     * @param i      The index of the parameter.
+     * @return The raw parameter type for the parameter at index {@code i} on the given {@link SerializedLambda}.
+     * @see SerializableLambda#serialized()
+     */
+    public static Class<?> getRawParameterType(SerializedLambda lambda, int i) {
+        MethodType methodType = MethodType.fromMethodDescriptorString(lambda.getImplMethodSignature(),
+                Lambdas.class.getClassLoader());
+        return methodType.parameterType(i);
     }
 }
