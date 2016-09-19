@@ -14,7 +14,7 @@
     <dependencies>
         <dependency>
             <groupId>com.impressiveinteractive.synapse</groupId>
-            <artifactId>synapse-api</artifactId>
+            <artifactId>synapse-core</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency> <!-- TODO: Remove - Only used for limited TypeToken functionality -->

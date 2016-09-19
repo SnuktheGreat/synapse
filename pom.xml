@@ -10,7 +10,7 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>synapse-api</module>
+        <module>synapse-core</module>
         <module>synapse-test</module>
     </modules>
 
