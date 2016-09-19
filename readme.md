@@ -9,7 +9,7 @@ Synapse is a library that provides some easy to use utilities for Java 8. It is 
 
 **Exception formatting**
 
-```
+```java
 IOException formatted = Exceptions.format(IOException::new,
     "Testing {}, {}, {}.", "one", "two", "three", cause);
 ```
@@ -18,14 +18,14 @@ See [SLF4J style exception message formatting](#slf4j-style-exception-message-fo
 
 **Wrap checked exceptions**
 
-```
+```java
 Stream.of("Apple", "Orange")
         .forEach(Exceptions.wrapExceptional(references::consume, RuntimeIOException::new));
 ```
 
 **Wrap and unwrap checked exceptions**
 
-```
+```java
 try {
     Stream.of("Apple", "Orange")
             .forEach(Exceptions.wrapExceptional(references::consume, WrappedIOException::new));
@@ -36,7 +36,7 @@ try {
 
 **Lambda Tools**
 
-```
+```java
 String transform(Integer in);
 
 ...
@@ -47,7 +47,7 @@ assertThat(Lambdas.serializable(item::transform).getResultClass(), is(equalTo(St
 
 **Chainable Hamcrest Matcher**
 
-```
+```java
 assertThat(person, is(ofType(Person.class)
         .where(Person::getFirstName, is("Steve"))
         .where(Person::getSurName, is("Jones"))
@@ -73,13 +73,13 @@ functionality:
 
 Allows you to use SLF4J type message formatting to all exceptions that have the normal `Exception(String message, Throwable cause)` constructor. This turns ancient code like this:
 
-```
+```java
 throw new SomeException("Location " + oldLocation + " for consumer " + consumerId + " could not be updated to " + newLocation, cause);
 ```
 
 Into a familiar and more readable:
 
-```
+```java
 throw Exceptions.format(SomeException::new, "Location {} for consumer {} could not be updated to {}.", oldLocation, consumerId, newLocation, cause);
 ```
 
@@ -93,7 +93,7 @@ Whether you like or dislike checked exceptions, the fact is that they do happen 
 
 Consider the following example where we want to find the lists for a given stream of class names:
 
-```
+```java
 Stream.of("java.util.List", "java.util.ArrayList", "java.util.LinkedList")
         .map(Class::forName) // throws checked ClassNotFoundException
         .filter(Class::isInterface)
@@ -102,7 +102,7 @@ Stream.of("java.util.List", "java.util.ArrayList", "java.util.LinkedList")
 
 In this case the method we want to use (`Class.forName`), which is like a function but throws an exception. In Synergy this is called an _ExceptionalFunction_ and we can convert that to a normal _Function_ like so:
  
-```
+```java
 Stream.of("java.util.List", "java.util.ArrayList", "java.util.LinkedList")
         .map(Exceptions.wrapExceptionalFunction(Class::forName, RuntimeClassNotFoundException::new))
         .filter(Class::isInterface)
@@ -113,7 +113,7 @@ Now when the `Class.forName(String)` method throws an exception it will be wrapp
 
 It is also possible wrap the exception temporarily and unwrap it once the stream completes. To do this you can use the same `Exceptions.wrapExceptional*` methods, but supply a `WrappedException` type instead. This will look like this:
 
-```
+```java
 try {
     Stream.of("java.util.List", "java.util.ArrayList", "java.util.LinkedList")
             .map(Exceptions.wrapExceptionalFunction(Class::forName, WrappedClassNotFoundException::new))
