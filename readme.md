@@ -23,7 +23,7 @@ Stream.of("Apple", "Orange")
         .forEach(Exceptions.wrapExceptional(references::consume, RuntimeIOException::new));
 ```
 
-**Wrap and unwrap checked exceptions**
+You can also choose to wrap and unwrap checked exceptions.
 
 ```java
 try {
@@ -33,6 +33,8 @@ try {
     e.unwrap(); // Throws original IOException
 }
 ```
+
+See [Wrap checked exceptions](#wrap-checked-exceptions)
 
 **Lambda Tools**
 
