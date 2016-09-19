@@ -1,18 +1,48 @@
 # Synapse
 
-Synapse is a core library that provides some easy to use utilities for Java 8. Examples include:
+Synapse is a library that provides some easy to use utilities for Java 8. It is made up out of two parts:
 
-**SLF4J Style exception messages**
+- [synapse-core](#synapse-core): Provides core utility classes;
+- [synapse-test](#synapse-test): Provides testing utility classes and Hamcrest matchers.
+
+## Quick Examples:
+
+**Exception formatting**
 
 ```
 IOException formatted = Exceptions.format(IOException::new,
     "Testing {}, {}, {}.", "one", "two", "three", cause);
 ```
 
+See [SLF4J style exception message formatting](#slf4j-style-exception-message-formatting)
+
+**Wrap checked exceptions**
+
+```
+Stream.of("Apple", "Orange")
+        .forEach(Exceptions.wrapExceptional(references::consume, RuntimeIOException::new));
+```
+
+**Wrap and unwrap checked exceptions**
+
+```
+try {
+    Stream.of("Apple", "Orange")
+            .forEach(Exceptions.wrapExceptional(references::consume, WrappedIOException::new));
+} catch (WrappedIOException e) {
+    e.unwrap(); // Throws original IOException
+}
+```
+
 **Lambda Tools**
 
 ```
-Example
+String transform(Integer in);
+
+...
+
+assertThat(Lambdas.serializable(item::transform).getInputClass(), is(equalTo(Integer.class)));
+assertThat(Lambdas.serializable(item::transform).getResultClass(), is(equalTo(String.class)));
 ```
 
 **Chainable Hamcrest Matcher**
@@ -26,11 +56,20 @@ assertThat(person, is(ofType(Person.class)
         .where(Person::isAwesome, is(true))));
 ```
 
-## Exceptions
+## synapse-core
 
-The `Exceptions` class can be used to simplify the creation and use of `Throwable` instances.
+The core library contains very easy to use utility classes. It currently depends on slf4j-api only, making it very
+lightweight. It is planned to remove this dependency also, since it's used for message formatting only.
 
-### SLF4J exception message formatting
+### Exceptions
+
+The `Exceptions` class can be used to simplify the creation and use of `Throwable` instances. It has the following
+functionality:
+
+- `Exceptions.format` and `Exceptions.formatMessage` - SLF4J style exception message formatting;
+- `Exceptions.wrapExceptional` and derived - Allows wrapping (and unwrapping) checked exceptions in unchecked ones.
+
+#### SLF4J style exception message formatting
 
 Allows you to use SLF4J type message formatting to all exceptions that have the normal `Exception(String message, Throwable cause)` constructor. This turns ancient code like this:
 
@@ -48,7 +87,7 @@ The given cause in the example is completely optional as it is when you would lo
 
 It is also possible to disallow a cause altogether. In this case you can execute `Exceptions.formatMessage(...)`, which calls the `Exception(String messsage)` constructor instead. Note that adding a cause here will cause an IllegalArgumentException.
 
-### Wrap checked exceptions
+#### Wrap checked exceptions
 
 Whether you like or dislike checked exceptions, the fact is that they do happen and occasionally they happen when you're making use of the Java 8 Stream API. The `Exceptions.wrapExceptional*` methods provide an easy way to wrap checked exceptions and leaves the choice of rethrowing the original to you.
 
@@ -85,4 +124,4 @@ try {
 }
 ```
 
-Next to `wrapExceptionalFunction` for _Function_ lambdas, there also is a `wrapExceptionalConsumer`  for _Consumer_ lambdas and `wrapExceptionalSupplier` for _Supplier_ instances. There are also three `wrapExceptional` methods that infer the type from the given lambda automatically.
+Next to `wrapExceptionalFunction` for _Function_ lambdas, there also is a `wrapExceptionalConsumer`  for _Consumer_ lambdas and `wrapExceptionalSupplier` for _Supplier_ lambdas. There are also three `wrapExceptional` methods that infer the type from the given lambda automatically.
