@@ -11,10 +11,15 @@ import org.mockito.runners.MockitoJUnitRunner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.util.List;
 import java.util.stream.Stream;
 
+import static java.util.stream.Collectors.toList;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
@@ -36,6 +41,8 @@ public class ExceptionsTest {
     private MethodReferences references;
 
     private final FileNotFoundException cause = new FileNotFoundException("I couldn't find ~/Desktop/secrets");
+
+    private Narrator narrator = new Narrator();
 
     @Test
     public void format() throws Exception {
@@ -59,6 +66,31 @@ public class ExceptionsTest {
     public void formatMessage_exceptionArgumentAdded() throws Exception {
         exception.expect(IllegalArgumentException.class);
         Exceptions.formatMessage(IOException::new, "Testing {}, {}, {}.", "one", "two", "three", cause);
+    }
+
+    @Test
+    public void wrapExceptional_exampleRuntimeEquivalent() throws Exception {
+        List<String> types = Stream.of("/does/not/exist/text.txt", "/does/not/exist/image.jpg")
+                .map(File::new)
+                .map(File::toPath)
+                .map(Exceptions.wrapExceptional(Files::probeContentType, RuntimeIOException::new))
+                .collect(toList());
+
+        assertThat(types, contains("text/plain", "image/jpeg"));
+    }
+
+    @Test
+    public void wrapExceptional_exampleWrappedEquivalent() throws Exception {
+        try {
+            List<String> types = Stream.of("/does/not/exist/text.txt", "/does/not/exist/image.jpg")
+                    .map(File::new)
+                    .map(File::toPath)
+                    .map(Exceptions.wrapExceptional(Files::probeContentType, WrappedIOException::new))
+                    .collect(toList());
+            assertThat(types, contains("text/plain", "image/jpeg"));
+        } catch (WrappedIOException e) {
+            e.unwrap();
+        }
     }
 
     @Test
@@ -178,5 +210,11 @@ public class ExceptionsTest {
         String supply() throws IOException;
 
         String transform(String consumable) throws IOException;
+    }
+
+    private static class Narrator {
+        public void narrate(String line) {
+            LOGGER.info(line);
+        }
     }
 }
