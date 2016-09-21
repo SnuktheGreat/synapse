@@ -230,7 +230,7 @@ the given person. The keen observer will have noticed that in the above case the
 _ChainableMatcher_ fails, it will point you directly to the `where(...)` statements that do not match. For the example
 above it reports:
 
-```java
+```
 java.lang.AssertionError: 
 Expected: is of type Person with firstName is "Steve" with surName is "Jones" with gender is <MALE> with age is <43> with awesome is <true>
      but: has unexpected value for:
@@ -242,10 +242,6 @@ Expected: is of type Person with firstName is "Steve" with surName is "Jones" wi
 
 The _ChainableMatcher_ uses the given lambdas to describe which fields you want to test and the matchers are used to
 describe which value is expected.
-
-#### Custom descriptions
-
-TODO: 
 
 #### Custom Matcher Class
 
@@ -306,7 +302,8 @@ public class PersonMatcher extends ChainableMatcher<Person> {
 
 #### Nested Objects
 
-TODO
+Since the _ChainableMatcher_ is just a _Hamcrest Matcher_, you can nest them to inspect a complete object tree. Below
+is an example of a _Couple_ which in turn contains two _Person_ instances:
 
 ```java
 assertThat(
@@ -330,7 +327,13 @@ assertThat(
 
 #### Mapping values
 
-TODO:
+Sometimes it is convenient to convert an object before matching it. You can convert any value using the
+`ChainableMatcher.map` method. This method returns a chainable _FieldMapper_ which can be used to map the original
+value repeatedly until you reach the object you'd like to map.
+
+In the example below we have a _People_ instance, which contains a list with two _Person_ instances. We use
+`Person::getList` to get the list, map it once to the first item in the list using a lambda (`list -> list.get(0)`),
+and then again map it that _Person's_ first name using `Person::getFirstName`.
 
 ```java
 assertThat(
@@ -339,7 +342,56 @@ assertThat(
                 Person.name("James", "Wilson").gender(Gender.MALE).age(33).awesome(false)),
         is(ofType(People.class)
                 .where(map(People::getList)
-                                .to("get(0)", list -> list.get(0))
+                                .to(list -> list.get(0))
                                 .to(Person::getFirstName),
                         is("Maria"))));
+```
+
+#### Custom descriptions
+
+The _ChainableMatcher_ will try to describe lambdas that have been passed to it. Sometimes however this does not
+produce the nicest results. Take the following example:
+
+```java
+assertThat(
+        people(Person.name("Maria", "Wilson").gender(Gender.FEMALE).age(31).awesome(false)),
+        is(ofType(People.class)
+                .where(map(People::getList)
+                                .to("get(0)", list -> list.get(0))
+                                .to(Person::getFirstName),
+                        is("James"))));
+```
+
+This will produce the following slightly cryptic message:
+
+```
+java.lang.AssertionError: 
+Expected: of type People with <lambda>(list).firstName is "James"
+     but: has unexpected value for:
+	<lambda>(list).firstName was "Maria"
+		expecting with <lambda>(list).firstName is "James"
+```
+
+This message is produced because the given lambda is not a method reference and therefore a nice description could not
+be assigned to it. To solve this problem, both the `ChainableMatcher.where(...)` and `FieldMapper.to(...)` method have
+an optional _String_ first parameter with which you can define a custom name. We can modify the above example like so:
+
+```java
+assertThat(
+        people(Person.name("Maria", "Wilson").gender(Gender.FEMALE).age(31).awesome(false)),
+        is(ofType(People.class)
+                .where(map(People::getList)
+                                .to("get(0)", list -> list.get(0))
+                                .to(Person::getFirstName),
+                        is("James"))));
+```
+
+Which will produce a nicer message like this:
+
+```
+java.lang.AssertionError: 
+Expected: of type People with list.get(0).firstName is "James"
+     but: has unexpected value for:
+	list.get(0).firstName was "Maria"
+		expecting with list.get(0).firstName is "James"
 ```
