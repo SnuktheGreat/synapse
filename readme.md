@@ -47,6 +47,8 @@ assertThat(Lambdas.serializable(item::transform).getInputClass(), is(equalTo(Int
 assertThat(Lambdas.serializable(item::transform).getResultClass(), is(equalTo(String.class)));
 ```
 
+See [Lambdas](#lambdas)
+
 **Chainable Hamcrest Matcher**
 
 ```java
@@ -57,6 +59,8 @@ assertThat(person, is(ofType(Person.class)
         .where(Person::getAge, is(43))
         .where(Person::isAwesome, is(true))));
 ```
+
+See [_ChainableMatcher_](#chainablematcher)
 
 ## synapse-core
 
@@ -162,7 +166,7 @@ The _Lambdas_ class is built around the _SerializableLambda_, which contains a `
 method. The [_SerializedLambda_](https://docs.oracle.com/javase/8/docs/api/java/lang/invoke/SerializedLambda.html)
 returned by this method can be used to get extra information about the lambda. It for instance contains where it was
 given, what kind of lambda it is, what method it refers to etc. In Synapse this information is used for the
-ChainableMatcher for instance.
+[_ChainableMatcher_](#chainablematcher) for instance.
 
 Synapse comes with three _SerializableLambda_ types: The _SerializableConsumer_, the _SerializableFunction_ and the
 _SerializableSupplier_. All these three extend their original functional interface (_Consumer_, _Function_ and
@@ -196,3 +200,45 @@ The `getInputClass()` method on _SerializableConsumer_ and _SerializableFunction
 _SerializableFunction_ and _SerializableSupplier_ are default convenience methods to one of these methods above.
 
 More methods may be add in the future.
+
+## synapse-test
+
+Synapse test is the test module of the Synapse library. For now it gives access to one new type of _Hamcrest Matcher_,
+the ChainableMatcher.
+
+### The ChainableMatcher
+
+The _ChainableMatcher_ allows you to write test code for any type of custom object you want to test, without having to
+build a custom _Matcher_. Consider for instance having a _Person_ instance and you need to test whether the name, age,
+gender etc. are all correct. You can do this in multiple lines like: `assertThat(person.getFirstName(), is("David"))`,
+but ideally you would create a custom _PersonMatcher_. This however requires quite a lot of plumbing.
+
+With the _ChainableMatcher_ the above example with the Person would look like this:
+
+```java
+assertThat(Person.name("Stella", "Jones").gender(Gender.FEMALE).age(43).awesome(true),
+        is(ofType(Person.class)
+                .where(Person::getFirstName, is("Steve"))
+                .where(Person::getSurName, is("Jones"))
+                .where(Person::getGender, is(Gender.MALE))
+                .where(Person::getAge, is(43))
+                .where(Person::isAwesome, is(true))));
+```
+
+The _ChainableMatcher_ uses the given lambda/matcher combinations to check whether all these combinations are true on
+the given person. The keen observer will have noticed that in the above case the matcher fails. When the
+_ChainableMatcher_ fails, it will point you directly to the `where(...)` statements that do not match. For the example
+above it reports:
+
+```java
+java.lang.AssertionError: 
+Expected: is of type Person with firstName is "Steve" with surName is "Jones" with gender is <MALE> with age is <43> with awesome is <true>
+     but: has unexpected value for:
+	firstName was "Stella"
+		expecting with firstName is "Steve"
+	gender was <FEMALE>
+		expecting with gender is <MALE>
+```
+
+The _ChainableMatcher_ uses the given lambdas to describe which fields you want to test and the matchers are used to
+describe which value is expected.
