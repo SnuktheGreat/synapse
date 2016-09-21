@@ -206,7 +206,7 @@ More methods may be add in the future.
 Synapse test is the test module of the Synapse library. For now it gives access to one new type of _Hamcrest Matcher_,
 the ChainableMatcher.
 
-### The ChainableMatcher
+### ChainableMatcher
 
 The _ChainableMatcher_ allows you to write test code for any type of custom object you want to test, without having to
 build a custom _Matcher_. Consider for instance having a _Person_ instance and you need to test whether the name, age,
@@ -242,3 +242,104 @@ Expected: is of type Person with firstName is "Steve" with surName is "Jones" wi
 
 The _ChainableMatcher_ uses the given lambdas to describe which fields you want to test and the matchers are used to
 describe which value is expected.
+
+#### Custom descriptions
+
+TODO: 
+
+#### Custom Matcher Class
+
+One could still argue that the above example is a little verbose and that they'd still rather have a custom _Matcher_.
+A custom matcher would look something like this:
+
+```java
+assertThat(
+        Person.name("James", "Wilson").gender(Gender.MALE).age(33).awesome(false),
+        isPerson()
+                .withFirstName(equalTo("James"))
+                .withSurName(equalTo("Wilson"))
+                .withGender(is(Gender.MALE))
+                .withAge(is(33))
+                .withAwesomeness(is(false)))
+```
+
+The above example however uses the _ChainableMatcher_ as a base, so you still get the same functionality. The _Matcher_
+class looks like this:
+
+```java
+public class PersonMatcher extends ChainableMatcher<Person> {
+    
+    public static PersonMatcher isPerson() {
+        return new PersonMatcher();
+    }
+
+    public PersonMatcher() {
+        super(Person.class);
+    }
+
+    public PersonMatcher withFirstName(Matcher<String> matcher) {
+        where(Person::getFirstName, matcher);
+        return this;
+    }
+
+    public PersonMatcher withSurName(Matcher<String> matcher) {
+        where(Person::getSurName, matcher);
+        return this;
+    }
+
+    public PersonMatcher withGender(Matcher<Gender> matcher) {
+        where(Person::getGender, matcher);
+        return this;
+    }
+
+    public PersonMatcher withAge(Matcher<Integer> matcher) {
+        where(Person::getAge, matcher);
+        return this;
+    }
+
+    public PersonMatcher withAwesomeness(Matcher<Boolean> matcher) {
+        where(Person::isAwesome, matcher);
+        return this;
+    }
+}
+```
+
+#### Nested Objects
+
+TODO
+
+```java
+assertThat(
+        couple()
+                .woman(Person.name("Maria", "Wilson").gender(Gender.FEMALE).age(31).awesome(true))
+                .man(Person.name("James", "Wilson").gender(Gender.MALE).age(33).awesome(false)),
+        ofType(Couple.class)
+                .where(Couple::getMan, is(ofType(Person.class)
+                        .where(Person::getFirstName, is("James"))
+                        .where(Person::getSurName, is("Wilson"))
+                        .where(Person::getGender, is(Gender.MALE))
+                        .where(Person::getAge, is(33))
+                        .where(Person::isAwesome, is(false))))
+                .where(Couple::getWoman, is(ofType(Person.class)
+                        .where(Person::getFirstName, is("Maria"))
+                        .where(Person::getSurName, is("Wilson"))
+                        .where(Person::getGender, is(Gender.FEMALE))
+                        .where(Person::getAge, is(31))
+                        .where(Person::isAwesome, is(true)))));
+```
+
+#### Mapping values
+
+TODO:
+
+```java
+assertThat(
+        people(
+                Person.name("Maria", "Wilson").gender(Gender.FEMALE).age(31).awesome(true),
+                Person.name("James", "Wilson").gender(Gender.MALE).age(33).awesome(false)),
+        is(ofType(People.class)
+                .where(map(People::getList)
+                                .to("get(0)", list -> list.get(0))
+                                .to(Person::getFirstName),
+                        is("Maria"))));
+```

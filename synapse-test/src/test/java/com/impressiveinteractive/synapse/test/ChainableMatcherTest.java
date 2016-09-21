@@ -50,6 +50,18 @@ public class ChainableMatcherTest {
     }
 
     @Test
+    public void testSimpleUseCase_extendedChainable() throws Exception {
+        assertThat(
+                Person.name("James", "Wilson").gender(Gender.MALE).age(33).awesome(false),
+                isPerson()
+                        .withFirstName(equalTo("James"))
+                        .withSurName(equalTo("Wilson"))
+                        .withGender(is(Gender.MALE))
+                        .withAge(is(33))
+                        .withAwesomeness(is(false)));
+    }
+
+    @Test
     public void testNestedUseCase() throws Exception {
         assertThat(
                 couple()
@@ -68,27 +80,6 @@ public class ChainableMatcherTest {
                                 .where(Person::getGender, is(Gender.FEMALE))
                                 .where(Person::getAge, is(31))
                                 .where(Person::isAwesome, is(true)))));
-    }
-
-    @Test
-    public void testNestedUseCase_extendedChainable() throws Exception {
-        assertThat(
-                couple()
-                        .woman(Person.name("Maria", "Wilson").gender(Gender.FEMALE).age(31).awesome(true))
-                        .man(Person.name("James", "Wilson").gender(Gender.MALE).age(33).awesome(false)),
-                isCouple()
-                        .withMan(isPerson()
-                                .withFirstName(equalTo("James"))
-                                .withSurName(equalTo("Wilson"))
-                                .withGender(is(Gender.MALE))
-                                .withAge(is(33))
-                                .withAwesomeness(is(false)))
-                        .withWoman(isPerson()
-                                .withFirstName(equalTo("Maria"))
-                                .withSurName(equalTo("Wilson"))
-                                .withGender(is(Gender.FEMALE))
-                                .withAge(is(31))
-                                .withAwesomeness(is(true))));
     }
 
     @Test
@@ -127,15 +118,15 @@ public class ChainableMatcherTest {
     @Test
     @SuppressWarnings("unchecked")
     public void testNestedUseCaseWithMapping() throws Exception {
-        People people = people(
-                Person.name("Maria", "Wilson").gender(Gender.FEMALE).age(31).awesome(true),
-                Person.name("James", "Wilson").gender(Gender.MALE).age(33).awesome(false));
-
-        assertThat(people, is(ofType(People.class)
-                .where(map(People::getList)
-                                .to(list -> list.get(0))
-                                .to(Person::getFirstName),
-                        is("Maria"))));
+        assertThat(
+                people(
+                        Person.name("Maria", "Wilson").gender(Gender.FEMALE).age(31).awesome(true),
+                        Person.name("James", "Wilson").gender(Gender.MALE).age(33).awesome(false)),
+                is(ofType(People.class)
+                        .where(map(People::getList)
+                                        .to("get(0)", list -> list.get(0))
+                                        .to(Person::getFirstName),
+                                is("Maria"))));
     }
 
     @Test
@@ -202,10 +193,6 @@ public class ChainableMatcherTest {
 
     private static Couple couple() {
         return new Couple();
-    }
-
-    private static CoupleMatcher isCouple() {
-        return new CoupleMatcher();
     }
 
     private static PersonMatcher isPerson() {
@@ -307,23 +294,6 @@ public class ChainableMatcherTest {
 
         public List<Person> getList() {
             return people;
-        }
-    }
-
-    private static class CoupleMatcher extends ChainableMatcher<Couple> {
-
-        public CoupleMatcher() {
-            super(Couple.class);
-        }
-
-        public CoupleMatcher withMan(Matcher<Person> matcher) {
-            where(Couple::getMan, matcher);
-            return this;
-        }
-
-        public CoupleMatcher withWoman(Matcher<Person> matcher) {
-            where(Couple::getWoman, matcher);
-            return this;
         }
     }
 
