@@ -16,6 +16,24 @@ import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
 
+/**
+ * This Hamcrest {@link Matcher} is used to match custom method references on custom objects. It's basically a very
+ * quick and intuitive way of writing a custom matcher. Example:
+ * <p>
+ * <pre>
+ * assertThat(Person.name("Steve", "Jones").gender(Gender.MALE).age(43).awesome(true),
+ *         is(ofType(Person.class)
+ *                 .where(Person::getFirstName, is("Steve"))
+ *                 .where(Person::getSurName, is("Jones"))
+ *                 .where(Person::getGender, is(Gender.MALE))
+ *                 .where(Person::getAge, is(43))
+ *                 .where(Person::isAwesome, is(true))));
+ * </pre>
+ * <p>
+ * See the test class for more examples.
+ *
+ * @param <T> The type of the object being matched.
+ */
 public class ChainableMatcher<T> extends BaseMatcher<T> {
 
     private final List<FieldMatcher<?>> fieldMatchers = new ArrayList<>();
@@ -25,7 +43,7 @@ public class ChainableMatcher<T> extends BaseMatcher<T> {
      * Create a new {@link ChainableMatcher} for the given type.
      *
      * @param cls The given (simple) type.
-     * @param <T> The type.
+     * @param <T> The type of the object being matched.
      * @return A new {@link ChainableMatcher} for the given type.
      */
     public static <T> ChainableMatcher<T> ofType(Class<T> cls) {
@@ -36,11 +54,40 @@ public class ChainableMatcher<T> extends BaseMatcher<T> {
      * Create a new {@link ChainableMatcher} for the given type.
      *
      * @param type The given type.
-     * @param <T>  The type.
+     * @param <T>  The type of the object being matched.
      * @return A new {@link ChainableMatcher} for the given type.
      */
     public static <T> ChainableMatcher<T> ofType(TypeToken<T> type) {
         return new ChainableMatcher<>(type);
+    }
+
+    /**
+     * Create a new {@link FieldMapper} for the given value extractor. Note that the given function
+     * <strong>must</strong> be a method reference on a class if type {@link T} and must be getter-like (have 0
+     * arguments and a return value). A description for the given method reference is inferred.
+     *
+     * @param valueExtractor Method reference to a getter-like method.
+     * @param <T>            The type of the object being matched.
+     * @param <V>            The initial value from the given method reference.
+     * @return The {@link FieldMapper} to map from type {@link V}.
+     */
+    public static <T, V> FieldMapper<T, V, V> map(SerializableFunction<T, V> valueExtractor) {
+        return new FieldMapper<>(new Field<>(requireNonNull(valueExtractor)));
+    }
+
+    /**
+     * Create a new {@link FieldMapper} for the given value extractor. Note that the given function
+     * <strong>must</strong> be a method reference on a class if type {@link T} and must be getter-like (have 0
+     * arguments and a return value). A description for the given method reference is given.
+     *
+     * @param description    A text description of the method reference.
+     * @param valueExtractor Method reference to a getter-like method.
+     * @param <T>            The type of the object being matched.
+     * @param <V>            The initial value from the given method reference.
+     * @return The {@link FieldMapper} to map from type {@link V}.
+     */
+    public static <T, V> FieldMapper<T, V, V> map(String description, SerializableFunction<T, V> valueExtractor) {
+        return new FieldMapper<>(new Field<>(requireNonNull(valueExtractor), description));
     }
 
     /**
@@ -85,7 +132,8 @@ public class ChainableMatcher<T> extends BaseMatcher<T> {
         } else if (kind == 6 || serialized.getCapturedArgCount() == 1) {
             String className = serialized.getImplClass();
             int lastSlash = className.lastIndexOf('/');
-            return className.substring(lastSlash + 1, className.length()) + "." + serialized.getImplMethodName() + "(" + appliedTo + ")";
+            return className.substring(lastSlash + 1, className.length()) + "." + serialized.getImplMethodName()
+                    + "(" + appliedTo + ")";
         }
         throw new IllegalArgumentException("Unknown type of SerializableFunction.");
     }
@@ -174,34 +222,48 @@ public class ChainableMatcher<T> extends BaseMatcher<T> {
     }
 
     /**
-     * Apply the given matcher for the given method reference . Note that this function <strong>must</strong> be a method reference to a
-     * getter. TODO more docs
+     * Match the result of the given method reference with the given matcher. Note that the given function
+     * <strong>must</strong> be a method reference on a class if type {@link T} and must be getter-like (have 0
+     * arguments and a return value). A description for the given method reference is inferred.
      *
-     * @param methodReference Method reference to a getter type method.
-     * @param matcher         The given matcher.
-     * @param <V>             The value type for the described field.
-     * @return This {@link ChainableMatcher} for further chaining.
-     */
-    public <V> ChainableMatcher<T> where(SerializableFunction<T, V> methodReference, Matcher<? super V> matcher) {
-        requireNonNull(methodReference);
-        return where(describe(methodReference), methodReference, matcher);
-    }
-
-    /**
-     * Apply the given matcher for a field with the given name and value extractor.
-     *
-     * @param name           The name describing the field.
-     * @param valueExtractor The value extractor for the field.
+     * @param valueExtractor Method reference to a getter-like method.
      * @param matcher        The given matcher.
      * @param <V>            The value type for the described field.
      * @return This {@link ChainableMatcher} for further chaining.
      */
-    public <V> ChainableMatcher<T> where(String name, SerializableFunction<T, V> valueExtractor, Matcher<? super V> matcher) {
-        Field<T, V> field = new Field<>(requireNonNull(valueExtractor), name);
+    public <V> ChainableMatcher<T> where(SerializableFunction<T, V> valueExtractor, Matcher<? super V> matcher) {
+        requireNonNull(valueExtractor);
+        return where(describe(valueExtractor), valueExtractor, matcher);
+    }
+
+    /**
+     * Match the result of the given method reference with the given matcher. Note that the given function
+     * <strong>must</strong> be a method reference on a class if type {@link T} and must be getter-like (have 0
+     * arguments and a return value). A description for the given method reference is given.
+     *
+     * @param description    A text description of the method reference.
+     * @param valueExtractor Method reference to a getter-like method.
+     * @param matcher        The given matcher.
+     * @param <V>            The value type for the described field.
+     * @return This {@link ChainableMatcher} for further chaining.
+     */
+    public <V> ChainableMatcher<T> where(String description, SerializableFunction<T, V> valueExtractor, Matcher<? super V> matcher) {
+        Field<T, V> field = new Field<>(requireNonNull(valueExtractor), description);
         FieldMapper<T, V, V> mapper = new FieldMapper<>(field);
         return where(mapper, matcher);
     }
 
+    /**
+     * Match the result of the given {@link FieldMapper} with the given matcher.
+     *
+     * @param mapper  The {@link FieldMapper}.
+     * @param matcher The given matcher.
+     * @param <V1>    The initial value type from the field mapper.
+     * @param <V2>    The eventual mapped value type from the field mapper.
+     * @return This {@link ChainableMatcher} for further chaining.
+     * @see #map(SerializableFunction)
+     * @see #map(String, SerializableFunction)
+     */
     public <V1, V2> ChainableMatcher<T> where(FieldMapper<T, V1, V2> mapper, Matcher<? super V2> matcher) {
         fieldMatchers.add(new FieldMatcher<>(requireNonNull(mapper), requireNonNull(matcher)));
         return ChainableMatcher.this;
@@ -218,14 +280,6 @@ public class ChainableMatcher<T> extends BaseMatcher<T> {
                 .collect(Collectors.joining("\n"));
     }
 
-    public static <T, V> FieldMapper<T, V, V> map(SerializableFunction<T, V> function) {
-        return new FieldMapper<>(new Field<>(requireNonNull(function)));
-    }
-
-    public static <T, V> FieldMapper<T, V, V> map(String name, SerializableFunction<T, V> function) {
-        return new FieldMapper<>(new Field<>(requireNonNull(function), name));
-    }
-
     /**
      * Used to chain transformations together to convert the value of the original method reference to the value to the
      * <em>actual</em> to test against. Example:
@@ -238,6 +292,8 @@ public class ChainableMatcher<T> extends BaseMatcher<T> {
      * @param <T> The original type from which the initial value is extracted.
      * @param <V> The type of the initial value.
      * @param <R> The type returned when this mapper completes.
+     * @see #map(SerializableFunction)
+     * @see #map(String, SerializableFunction)
      */
     public static final class FieldMapper<T, V, R> {
 
