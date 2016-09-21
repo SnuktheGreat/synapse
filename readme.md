@@ -60,7 +60,7 @@ assertThat(person, is(ofType(Person.class)
         .where(Person::isAwesome, is(true))));
 ```
 
-See [_ChainableMatcher_](#chainablematcher)
+See [ChainableMatcher](#chainablematcher)
 
 ## synapse-core
 
@@ -194,17 +194,15 @@ These are:
 - `Lambdas.getRawParameterTypes(SerializedLambda lambda)` - Get the raw type for all parameters on the given
   _SerializedLambda_;
 - `Lambdas.getRawParameterType(SerializedLambda lambda, int index)` - Get the raw parameter type for the parameter at
-  index _i_ on the given _SerializedLambda_.
+  _index_ on the given _SerializedLambda_.
 
 The `getInputClass()` method on _SerializableConsumer_ and _SerializableFunction_ and `getResultClass()` on
 _SerializableFunction_ and _SerializableSupplier_ are default convenience methods to one of these methods above.
 
-More methods may be add in the future.
-
 ## synapse-test
 
 Synapse test is the test module of the Synapse library. For now it gives access to one new type of _Hamcrest Matcher_,
-the ChainableMatcher.
+the _ChainableMatcher_.
 
 ### ChainableMatcher
 
@@ -227,8 +225,8 @@ assertThat(Person.name("Stella", "Jones").gender(Gender.FEMALE).age(43).awesome(
 
 The _ChainableMatcher_ uses the given lambda/matcher combinations to check whether all these combinations are true on
 the given person. The keen observer will have noticed that in the above case the matcher fails. When the
-_ChainableMatcher_ fails, it will point you directly to the `where(...)` statements that do not match. For the example
-above it reports:
+_ChainableMatcher_ fails, it will point you directly to the failing `where(...)` statements. For the example above it
+reports:
 
 ```
 java.lang.AssertionError: 
@@ -241,7 +239,8 @@ Expected: is of type Person with firstName is "Steve" with surName is "Jones" wi
 ```
 
 The _ChainableMatcher_ uses the given lambdas to describe which fields you want to test and the matchers are used to
-describe which value is expected.
+describe which value is expected. Only failing lambda/matcher combinations are reported for a clear and concise
+description of the actual problem.
 
 #### Custom Matcher Class
 
@@ -259,8 +258,8 @@ assertThat(
                 .withAwesomeness(is(false)))
 ```
 
-The above example however uses the _ChainableMatcher_ as a base, so you still get the same functionality. The _Matcher_
-class looks like this:
+The above example was also built using the _ChainableMatcher_ as a base, so you still get the same functionality. The
+_Matcher_ class looks like this:
 
 ```java
 public class PersonMatcher extends ChainableMatcher<Person> {
@@ -357,7 +356,7 @@ assertThat(
         people(Person.name("Maria", "Wilson").gender(Gender.FEMALE).age(31).awesome(false)),
         is(ofType(People.class)
                 .where(map(People::getList)
-                                .to("get(0)", list -> list.get(0))
+                                .to(list -> list.get(0))
                                 .to(Person::getFirstName),
                         is("James"))));
 ```
@@ -373,8 +372,9 @@ Expected: of type People with <lambda>(list).firstName is "James"
 ```
 
 This message is produced because the given lambda is not a method reference and therefore a nice description could not
-be assigned to it. To solve this problem, both the `ChainableMatcher.where(...)` and `FieldMapper.to(...)` method have
-an optional _String_ first parameter with which you can define a custom name. We can modify the above example like so:
+be assigned to it. To solve this problem, both the `ChainableMatcher.where(...)` and `FieldMapper.to(...)` methods have
+an optional _String_ first parameter with which you can set a custom description. In the above example we can set the
+description of `list -> list.get(0)` to `"get(0)"` like so:
 
 ```java
 assertThat(
@@ -386,7 +386,7 @@ assertThat(
                         is("James"))));
 ```
 
-Which will produce a nicer message like this:
+Which will produce this message:
 
 ```
 java.lang.AssertionError: 
