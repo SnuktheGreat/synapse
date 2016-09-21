@@ -36,7 +36,7 @@ try {
 
 See [Wrap checked exceptions](#wrap-checked-exceptions)
 
-**Lambda Tools**
+**Lambdas**
 
 ```java
 String transform(Integer in);
@@ -155,3 +155,44 @@ that creates your own _WrappedException_.
 The `Exceptions.wrapExceptional` method works on _Consumer_, _Function_ and _Supplier_ type lambdas. If the type of
 lambda can not be determined automatically, you can use the more specific `Exceptions.wrapExceptionalConsumer`,
 `Exceptions.wrapExceptionalFunction` and `Exceptions.wrapExceptionalSupplier`.
+
+### Lambdas
+
+The _Lambdas_ class is built around the _SerializableLambda_, which contains a `default SerializedLambda serialized()`
+method. The [_SerializedLambda_](https://docs.oracle.com/javase/8/docs/api/java/lang/invoke/SerializedLambda.html)
+returned by this method can be used to get extra information about the lambda. It for instance contains where it was
+given, what kind of lambda it is, what method it refers to etc. In Synapse this information is used for the
+ChainableMatcher for instance.
+
+Synapse comes with three _SerializableLambda_ types: The _SerializableConsumer_, the _SerializableFunction_ and the
+_SerializableSupplier_. All these three extend their original functional interface (_Consumer_, _Function_ and
+_Supplier_ respectively) and the _SerializableLambda_ class. When accepting one of these types in any of your methods,
+java will automatically convert any regular lambda to the serializable type. Example:
+
+```java
+public <T, R> void describe(SerializableFunction<T, R> function){
+    LOGGER.info("Function converts a {} to {}.", function.getInputClass(), function.getResultClass());
+}
+
+...
+
+describe((Integer i) -> ""+i); // Logs: Function converts a class java.lang.Integer to class java.lang.String.
+```
+
+To get access to a _SerializableLambda_ right away, you can use the `Lambdas.serializable(...)` methods, which takes
+either of the three subtypes as an argument and returns it. You can also use the more specific
+`Lambdas.serializableConsumer`, `Lambdas.serializableFunction` and `Lambdas.serializableSupplier` methods.
+
+For now there are three other methods on the _Lambdas_ class, which all accept a _SerializedLambda_ as an argument.
+These are:
+
+- `Lambdas.getRawReturnType(SerializedLambda lambda)` - Get the raw return type for the given _SerializedLambda_;
+- `Lambdas.getRawParameterTypes(SerializedLambda lambda)` - Get the raw type for all parameters on the given
+  _SerializedLambda_;
+- `Lambdas.getRawParameterType(SerializedLambda lambda, int index)` - Get the raw parameter type for the parameter at
+  index _i_ on the given _SerializedLambda_.
+
+The `getInputClass()` method on _SerializableConsumer_ and _SerializableFunction_ and `getResultClass()` on
+_SerializableFunction_ and _SerializableSupplier_ are default convenience methods to one of these methods above.
+
+More methods may be add in the future.
