@@ -206,7 +206,7 @@ public class ChainableMatcher<T> extends BaseMatcher<T> {
                     .collect(Collectors.toList());
             description.appendText("has unexpected value for:\n");
             for (FieldMatcher<?> subMatcher : misMatched) {
-                String fieldName = subMatcher.mapper.getName();
+                String fieldName = subMatcher.mapper.getDescription();
                 Object fieldValue = subMatcher.mapper.extractValue(instance);
                 description
                         .appendText(describeMismatch(fieldName, fieldValue, subMatcher))
@@ -317,22 +317,22 @@ public class ChainableMatcher<T> extends BaseMatcher<T> {
         }
 
         /**
-         * Map the current return type {@link R} to the new return type {@link R2} and name the transformation.
+         * Map the current return type {@link R} to the new return type {@link R2} and description the transformation.
          *
-         * @param name           The name of the result. Should describe the transformation. The Lambda
-         *                       {@code list -> list.get(0)} could be described as "get(0)" for example.
+         * @param description    The description of the transformation. The Lambda {@code list -> list.get(0)} could be
+         *                       described as "get(0)" for example.
          * @param transformation The function used to convert from {@link R} to {@link R2}.
          * @param <R2>           The new type returned when this mapper completes.
          * @return The mapper that extracts the initial value of type {@link V} from {@link T} and converts it to
          * {@link R2} using all given transformations.
          */
         @SuppressWarnings("unchecked")
-        public <R2> FieldMapper<T, V, R2> to(String name, SerializableFunction<R, R2> transformation) {
-            fields.add(new Field<>(requireNonNull(transformation), name));
+        public <R2> FieldMapper<T, V, R2> to(String description, SerializableFunction<R, R2> transformation) {
+            fields.add(new Field<>(requireNonNull(transformation), description));
             return (FieldMapper<T, V, R2>) this;
         }
 
-        private String getName() {
+        private String getDescription() {
             String candidate = original.describe();
             for (Field field : fields) {
                 candidate = field.describe(candidate);
@@ -352,15 +352,15 @@ public class ChainableMatcher<T> extends BaseMatcher<T> {
 
     private static final class Field<T, V> {
 
-        private final String name;
+        private final String description;
         private final SerializableFunction<T, V> valueExtractor;
 
         private Field(SerializableFunction<T, V> valueExtractor) {
             this(valueExtractor, null);
         }
 
-        private Field(SerializableFunction<T, V> valueExtractor, String name) {
-            this.name = name;
+        private Field(SerializableFunction<T, V> valueExtractor, String description) {
+            this.description = description;
             this.valueExtractor = valueExtractor;
         }
 
@@ -369,11 +369,13 @@ public class ChainableMatcher<T> extends BaseMatcher<T> {
         }
 
         private String describe() {
-            return name != null ? name : ChainableMatcher.describe(valueExtractor);
+            return description != null ? description : ChainableMatcher.describe(valueExtractor);
         }
 
         private String describe(String appendTo) {
-            return name != null ? appendTo + "." + name : ChainableMatcher.describe(valueExtractor, appendTo);
+            return description != null
+                    ? appendTo + "." + description
+                    : ChainableMatcher.describe(valueExtractor, appendTo);
         }
     }
 
@@ -396,7 +398,7 @@ public class ChainableMatcher<T> extends BaseMatcher<T> {
         public void describeTo(Description description) {
             description
                     .appendText(" with ")
-                    .appendText(mapper.getName())
+                    .appendText(mapper.getDescription())
                     .appendText(" ")
                     .appendDescriptionOf(matcher);
         }
