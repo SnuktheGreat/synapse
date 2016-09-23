@@ -5,6 +5,10 @@ Synapse is a library that provides some easy to use utilities for Java 8. It is 
 - [synapse-core](#synapse-core): Provides core utility classes;
 - [synapse-test](#synapse-test): Provides testing utility classes and Hamcrest matchers.
 
+On the bottom of this document you can find the following additional information:
+- [Contributing](#contributing)
+- [License](#license)
+
 ## Quick Examples:
 
 **Exception formatting**
@@ -395,3 +399,23 @@ Expected: of type People with list.get(0).firstName is "James"
 	list.get(0).firstName was "Maria"
 		expecting with list.get(0).firstName is "James"
 ```
+
+## Contributing
+
+All contributions to Synapse are welcomed! Please submit your bug reports, suggestions and or questions to
+[Issues](https://github.com/SnuktheGreat/synapse/issues). Code is contributed via pull requests and reviewed by the
+core team. Code contributions should fit Synapse's intentions and codestyle and should be properly documented (JavaDoc)
+and unit tested. It is recommended you create an issue accompanying any pull request.
+
+Contributors to Synapse are asked to waive all copyright and related or neighbouring rights to comply with the CC0
+license.
+
+## License
+
+![alt text](https://licensebuttons.net/p/zero/1.0/88x31.png "CC0")
+
+Synapse is considered to be of the public domain and comes with the  CC0 Public Domain Dedication. This means you can do
+with it or any part of it as you see fit, commercially or otherwise. For more information visit
+[https://creativecommons.org/publicdomain/zero/1.0/](https://creativecommons.org/publicdomain/zero/1.0/).
+
+All contributors have waived all copyright and related or neighbouring rights for their respective contributions.
