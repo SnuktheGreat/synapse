@@ -19,6 +19,7 @@ public interface ExceptionalSupplier<T, E extends Exception> {
      * Gets a result.
      *
      * @return a result
+     * @throws E thrown in exceptional circumstances
      */
     T get() throws E;
 }

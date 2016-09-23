@@ -19,7 +19,6 @@ import static java.util.Objects.requireNonNull;
 /**
  * This Hamcrest {@link Matcher} is used to match custom method references on custom objects. It's basically a very
  * quick and intuitive way of writing a custom matcher. Example:
- * <p>
  * <pre>
  * assertThat(Person.name("Steve", "Jones").gender(Gender.MALE).age(43).awesome(true),
  *         is(ofType(Person.class)
@@ -285,7 +284,7 @@ public class ChainableMatcher<T> extends BaseMatcher<T> {
      * <em>actual</em> to test against. Example:
      * <pre>
      * map(People::getList)
-     *         .to("get(0)", list -> list.get(0))
+     *         .to("get(0)", list -&gt; list.get(0))
      *         .to(Person::getFirstName)
      * </pre>
      *
@@ -319,8 +318,8 @@ public class ChainableMatcher<T> extends BaseMatcher<T> {
         /**
          * Map the current return type {@link R} to the new return type {@link R2} and description the transformation.
          *
-         * @param description    The description of the transformation. The Lambda {@code list -> list.get(0)} could be
-         *                       described as "get(0)" for example.
+         * @param description    The description of the transformation. The Lambda {@code list -&gt; list.get(0)} could
+         *                       be described as "get(0)" for example.
          * @param transformation The function used to convert from {@link R} to {@link R2}.
          * @param <R2>           The new type returned when this mapper completes.
          * @return The mapper that extracts the initial value of type {@link V} from {@link T} and converts it to
