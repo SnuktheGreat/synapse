@@ -17,7 +17,7 @@
             <artifactId>synapse-core</artifactId>
             <version>${project.version}</version>
         </dependency>
-        <dependency> <!-- TODO: Remove - Only used for limited TypeToken functionality -->
+        <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
         </dependency>
