@@ -9,6 +9,8 @@ On the bottom of this document you can find the following additional information
 - [Contributing](#contributing)
 - [License](#license)
 
+Check [Maven Central](http://search.maven.org/#search%7Cga%7C1%7Cg%3A%22com.impressiveinteractive.synapse%22) for the latest version.
+
 ## Quick Examples:
 
 **Exception formatting**
