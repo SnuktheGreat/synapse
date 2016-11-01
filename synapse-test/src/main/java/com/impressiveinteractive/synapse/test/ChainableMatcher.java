@@ -35,6 +35,8 @@ import static java.util.Objects.requireNonNull;
  */
 public class ChainableMatcher<T> extends BaseMatcher<T> {
 
+    private static final String LAMBDA_NAME = "<lambda>";
+
     private final List<FieldMatcher<?>> fieldMatchers = new ArrayList<>();
     private final TypeToken<T> type;
 
@@ -91,9 +93,10 @@ public class ChainableMatcher<T> extends BaseMatcher<T> {
 
     /**
      * Describes the given function, taking into consideration it is used with the {@link ChainableMatcher}. The given
-     * function must either be a getter or a single argument get method. In the first case the field name will be
-     * inferred from the method name and returned. In the second case the getter name will be returned in full with
-     * accompanying {@code ()} brackets.
+     * function must either be a getter or a single argument get method. This can be a 0 argument lambda as well. In the
+     * first case the field name will be inferred from the method name and returned. In the second case the getter name
+     * will be returned in full with accompanying {@code ()} brackets. If it is a lambda, the value for
+     * {@link #LAMBDA_NAME} will be returned.
      * <p/>
      * <strong>Package protected for easy testing.</strong>
      *
@@ -103,11 +106,7 @@ public class ChainableMatcher<T> extends BaseMatcher<T> {
      * @return A small string representation describing the function.
      */
     static <T, R> String describe(SerializableFunction<T, R> function) {
-        SerializedLambda serialized = function.serialized();
-        if (!isGetterLike(serialized)) {
-            throw new IllegalArgumentException("The given lambda is not getter like.");
-        }
-        return extractGetterLikeName(serialized);
+        return extractGetterLikeName(function.serialized());
     }
 
     /**
@@ -127,7 +126,7 @@ public class ChainableMatcher<T> extends BaseMatcher<T> {
         if (isGetterLike(serialized)) {
             return appliedTo + "." + extractGetterLikeName(serialized);
         } else if (kind == 6 && serialized.getImplMethodName().startsWith("lambda")) {
-            return "<lambda>(" + appliedTo + ")";
+            return LAMBDA_NAME + "(" + appliedTo + ")";
         } else if (kind == 6 || serialized.getCapturedArgCount() == 1) {
             String className = serialized.getImplClass();
             int lastSlash = className.lastIndexOf('/');
@@ -139,12 +138,19 @@ public class ChainableMatcher<T> extends BaseMatcher<T> {
 
     private static String extractGetterLikeName(SerializedLambda serialized) {
         String name;
-        if (isGetter(serialized)) {
-            String nameWithCapitalStart = serialized.getImplMethodName().replaceAll("^(get|is)([A-Z].*$)", "$2");
-            name = nameWithCapitalStart.substring(0, 1).toLowerCase()
-                    + nameWithCapitalStart.substring(1, nameWithCapitalStart.length());
+        String methodName = serialized.getImplMethodName();
+        if (isGetterLike(serialized)) {
+            if(isGetter(serialized)) {
+                String nameWithCapitalStart = methodName.replaceAll("^(get|is)([A-Z].*$)", "$2");
+                name = nameWithCapitalStart.substring(0, 1).toLowerCase()
+                        + nameWithCapitalStart.substring(1, nameWithCapitalStart.length());
+            }else{
+                name = methodName + "()";
+            }
+        } else if (methodName.startsWith("lambda")) {
+            return LAMBDA_NAME;
         } else {
-            name = serialized.getImplMethodName() + "()";
+            name = methodName;
         }
         return name;
     }
