@@ -195,7 +195,7 @@ public class ChainableMatcherTest {
         ChainableMatcher<Couple> matcher = ofType(Couple.class)
                 .where("males", c -> c.get(Gender.MALE), contains(maria));
 
-        assertThat(matcher.matches(couple), is(false)); // Obviously won't match Steve the Person.
+        assertThat(matcher.matches(couple), is(false)); // Maria is not a male
 
         assertThat(describeMismatch(matcher, couple), startsWith("has unexpected value for:\n\tmales item 0:"));
     }
