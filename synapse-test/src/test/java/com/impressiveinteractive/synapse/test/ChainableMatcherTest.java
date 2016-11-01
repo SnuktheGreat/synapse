@@ -7,13 +7,17 @@ import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.impressiveinteractive.synapse.test.ChainableMatcher.map;
 import static com.impressiveinteractive.synapse.test.ChainableMatcher.ofType;
 import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.startsWith;
 import static org.junit.Assert.assertThat;
 
 public class ChainableMatcherTest {
@@ -149,6 +153,26 @@ public class ChainableMatcherTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
+    public void testNestedUseCaseWithMappingFromWhereAndMap_failure() throws Exception {
+        ChainableMatcher<People> matcher = ofType(People.class)
+                .where(map(this::firstPerson).to(Person::getFirstName), is("James"));
+
+        People people = people(
+                Person.name("Maria", "Wilson").gender(Gender.FEMALE).age(31).awesome(false));
+
+        assertThat(matcher.matches(people), is(false));
+
+        assertThat(describeMismatch(matcher, people), allOf(
+                containsString("firstPerson.firstName was \"Maria\""),
+                containsString("expecting with firstPerson.firstName is \"James\"")));
+    }
+
+    private Person firstPerson(People people) {
+        return people.getList().get(0);
+    }
+
+    @Test
     public void testWrongType() throws Exception {
         ChainableMatcher<Person> matcher = ofType(Person.class)
                 .where(Person::getFirstName, is("Steve"))
@@ -160,6 +184,20 @@ public class ChainableMatcherTest {
         assertThat(matcher.matches(aString), is(false)); // Obviously won't match Steve the Person.
 
         assertThat(describeMismatch(matcher, aString), is("of unexpected type java.lang.String"));
+    }
+
+    @Test
+    public void testCustomLambdaName() throws Exception {
+        Person maria = Person.name("Maria", "Wilson").gender(Gender.FEMALE).age(31).awesome(true);
+        Person james = Person.name("James", "Wilson").gender(Gender.MALE).age(33).awesome(false);
+        Couple couple = couple().woman(maria).man(james);
+
+        ChainableMatcher<Couple> matcher = ofType(Couple.class)
+                .where("males", c -> c.get(Gender.MALE), contains(maria));
+
+        assertThat(matcher.matches(couple), is(false)); // Obviously won't match Steve the Person.
+
+        assertThat(describeMismatch(matcher, couple), startsWith("has unexpected value for:\n\tmales item 0:"));
     }
 
     // Protected method
@@ -281,6 +319,12 @@ public class ChainableMatcherTest {
 
         public Person getMan() {
             return man;
+        }
+
+        public List<Person> get(Gender gender) {
+            return Stream.of(man, woman)
+                    .filter(person -> person.gender == gender)
+                    .collect(Collectors.toList());
         }
     }
 
