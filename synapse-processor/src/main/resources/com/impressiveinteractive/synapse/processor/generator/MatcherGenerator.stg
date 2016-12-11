@@ -1,0 +1,50 @@
+group MatcherGenerator;
+
+/**
+ * The main template that generates the Matcher class.
+ */
+main(matcher) ::= <<
+package <matcher.packageName>;
+
+<matcher.imports:writeImport(); separator="\n">
+
+@Generated("com.impressiveinteractive.synapse.processor.SynapseProcessor")
+public class <matcher.destinationName>Matcher extends ChainableMatcher\<<matcher.destinationName>\> {
+    public static <matcher.destinationName>Matcher <matcher.propertyName>() {
+        return new <matcher.destinationName>Matcher();
+    }
+
+    public <matcher.destinationName>Matcher() {
+        super(<matcher.destinationName>.class);
+    }
+
+    <matcher.getterLikes:writeGetterLike(); separator="\n\n">
+
+    <matcher.utilities:writeUtility(); separator="\n\n">
+}
+>>
+
+/**
+ * Generates a single import line.
+ */
+writeImport(imp) ::= "import <imp>;"
+
+/**
+ * Generates a with* method that uses a getter like method on the destination type.
+ */
+writeGetterLike(getterLike) ::= <<
+public <getterLike.destinationName>Matcher with<getterLike.propertyName>(Matcher\<? super <getterLike.simpleReturnType>\> matcher) {
+    where(<getterLike.destinationName>::<getterLike.methodName>, matcher);
+    return this;
+}
+>>
+
+/**
+ * Generates a with* method that uses a custom name and utility method.
+ */
+writeUtility(utility) ::= <<
+public <utility.destinationName>Matcher with<utility.propertyName>(Matcher\<? super <utility.simpleReturnType>\> matcher) {
+    where("<utility.methodName>", <utility.simpleUtilityType>::<utility.methodName>, matcher);
+    return this;
+}
+>>
