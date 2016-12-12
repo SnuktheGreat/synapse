@@ -54,29 +54,9 @@ public class SynapseProcessor extends AbstractProcessor {
             if (element instanceof TypeElement && element.getAnnotation(Generated.class) == null) {
                 TypeElement typeElement = (TypeElement) element;
 
-                String qualifiedClassName;
-                String pojo = getPojo(typeElement);
-                String value = getValue(typeElement);
-                if (pojo != null) {
-                    qualifiedClassName = pojo;
-                } else if (value != null) {
-                    qualifiedClassName = value;
-                } else {
-                    processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR,
-                            "@BuildMatcher pojo() or value() must be set.", element);
-                    continue;
-                }
+                AnnotationMirror mirror = getAnnotationMirror(typeElement, BuildMatcher.class);
 
-                TypeElement destinationElement = processingEnv.getElementUtils().getTypeElement(qualifiedClassName);
-                if (destinationElement.getModifiers().contains(Modifier.ABSTRACT)) {
-                    processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR,
-                            "Can not use BuildMatcher with abstract type " +
-                                    destinationElement.getQualifiedName() + ".",
-                            typeElement);
-                } else {
-                    MatcherSettings settings = new MatcherSettings(destinationElement, getUtilities(typeElement));
-                    candidates.compute(qualifiedClassName, (c, old) -> merge(settings, old));
-                }
+                processBuildMatcherAnnotation(candidates, element, mirror);
             }
         }
 
@@ -84,102 +64,112 @@ public class SynapseProcessor extends AbstractProcessor {
             if (element instanceof TypeElement && element.getAnnotation(Generated.class) == null) {
                 TypeElement typeElement = (TypeElement) element;
                 AnnotationMirror buildMatchers = getAnnotationMirror(typeElement, BuildMatchers.class);
-                List<AnnotationMirror> children = Optional.ofNullable(getAnnotationValue(buildMatchers, "value"))
+                Optional.ofNullable(getAnnotationValue(buildMatchers, "value"))
                         .map(AnnotationValue::getValue)
                         .map(value -> (List<AnnotationMirror>) value)
-                        .orElse(Collections.emptyList());
-
-                for (AnnotationMirror child : children) {
-                    String qualifiedClassName;
-                    String pojo = getPojo(child);
-                    String value = getValue(child);
-                    if (pojo != null) {
-                        qualifiedClassName = pojo;
-                    } else if (value != null) {
-                        qualifiedClassName = value;
-                    } else {
-                        processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR,
-                                "@BuildMatcher pojo() or value() must be set.", element);
-                        continue;
-                    }
-
-                    TypeElement destinationElement = processingEnv.getElementUtils().getTypeElement(qualifiedClassName);
-                    if (destinationElement.getModifiers().contains(Modifier.ABSTRACT)) {
-                        processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR,
-                                "Can not use BuildMatcher with abstract type " +
-                                        destinationElement.getQualifiedName() + ".",
-                                typeElement);
-                    } else {
-                        MatcherSettings settings = new MatcherSettings(destinationElement, getUtilities(child));
-                        candidates.compute(qualifiedClassName, (c, old) -> merge(settings, old));
-                    }
-                }
+                        .orElse(Collections.emptyList())
+                        .forEach(child -> processBuildMatcherAnnotation(candidates, typeElement, child));
             }
+        }
 
-            for (MatcherSettings settings : candidates.values()) {
-                TypeElement destinationElement = settings.destination;
-                MatcherPojo matcherPojo = new MatcherPojo(
-                        ClassNameUtility.extractPackage(destinationElement.getQualifiedName().toString()),
-                        ClassNameUtility.extractClass(destinationElement.getQualifiedName().toString()));
+        for (MatcherSettings settings : candidates.values()) {
+            TypeElement destinationElement = settings.destination;
+            MatcherPojo matcherPojo = new MatcherPojo(
+                    ClassNameUtility.extractPackage(destinationElement.getQualifiedName().toString()),
+                    ClassNameUtility.extractClass(destinationElement.getQualifiedName().toString()));
 
-                destinationElement.getEnclosedElements().stream()
+            destinationElement.getEnclosedElements().stream()
+                    .filter(enclosed -> enclosed instanceof ExecutableElement)
+                    .map(enclosed -> (ExecutableElement) enclosed)
+                    .filter(executableElement -> executableElement.getKind() == ElementKind.METHOD)
+                    .filter(executableElement -> executableElement.getReturnType().getKind() != TypeKind.VOID)
+                    .filter(executableElement -> executableElement.getParameters().isEmpty())
+                    .filter(executableElement -> executableElement.getModifiers().contains(Modifier.PUBLIC))
+                    .filter(executableElement -> !executableElement.getModifiers().contains(Modifier.STATIC))
+                    .forEach(executableElement -> {
+                        String returnType = getReturnTypeAsString(executableElement);
+                        String simplifiedName = executableElement.getSimpleName().toString()
+                                .replaceAll("^(get|is)([A-Z].*$)", "$2");
+
+                        matcherPojo.addGetterLike(new WithGetterLikePojo(
+                                matcherPojo.getDestinationName(),
+                                executableElement.getSimpleName().toString(),
+                                simplifiedName.substring(0, 1).toUpperCase() + simplifiedName.substring(1),
+                                returnType));
+                    });
+
+            for (String utility : settings.utilities) {
+                TypeElement utilityElement = processingEnv.getElementUtils().getTypeElement(utility);
+                utilityElement.getEnclosedElements().stream()
                         .filter(enclosed -> enclosed instanceof ExecutableElement)
                         .map(enclosed -> (ExecutableElement) enclosed)
                         .filter(executableElement -> executableElement.getKind() == ElementKind.METHOD)
                         .filter(executableElement -> executableElement.getReturnType().getKind() != TypeKind.VOID)
-                        .filter(executableElement -> executableElement.getParameters().isEmpty())
+                        .filter(executableElement -> executableElement.getParameters().size() == 1)
+                        .filter(executableElement -> processingEnv.getTypeUtils().asElement(
+                                executableElement.getParameters().get(0).asType()).equals(destinationElement))
                         .filter(executableElement -> executableElement.getModifiers().contains(Modifier.PUBLIC))
-                        .filter(executableElement -> !executableElement.getModifiers().contains(Modifier.STATIC))
+                        .filter(executableElement -> executableElement.getModifiers().contains(Modifier.STATIC))
                         .forEach(executableElement -> {
                             String returnType = getReturnTypeAsString(executableElement);
-                            String simplifiedName = executableElement.getSimpleName().toString()
-                                    .replaceAll("^(get|is)([A-Z].*$)", "$2");
 
-                            matcherPojo.addGetterLike(new WithGetterLikePojo(
+                            String methodName = executableElement.getSimpleName().toString();
+                            matcherPojo.addUtility(new WithUtilityPojo(
                                     matcherPojo.getDestinationName(),
-                                    executableElement.getSimpleName().toString(),
-                                    simplifiedName.substring(0, 1).toUpperCase() + simplifiedName.substring(1),
+                                    utilityElement.getQualifiedName().toString(),
+                                    methodName,
+                                    methodName.substring(0, 1).toUpperCase() + methodName.substring(1),
                                     returnType));
                         });
+            }
 
-                for (String utility : settings.utilities) {
-                    TypeElement utilityElement = processingEnv.getElementUtils().getTypeElement(utility);
-                    utilityElement.getEnclosedElements().stream()
-                            .filter(enclosed -> enclosed instanceof ExecutableElement)
-                            .map(enclosed -> (ExecutableElement) enclosed)
-                            .filter(executableElement -> executableElement.getKind() == ElementKind.METHOD)
-                            .filter(executableElement -> executableElement.getReturnType().getKind() != TypeKind.VOID)
-                            .filter(executableElement -> executableElement.getParameters().size() == 1)
-                            .filter(executableElement -> processingEnv.getTypeUtils().asElement(
-                                    executableElement.getParameters().get(0).asType()).equals(destinationElement))
-                            .filter(executableElement -> executableElement.getModifiers().contains(Modifier.PUBLIC))
-                            .filter(executableElement -> executableElement.getModifiers().contains(Modifier.STATIC))
-                            .forEach(executableElement -> {
-                                String returnType = getReturnTypeAsString(executableElement);
-
-                                String methodName = executableElement.getSimpleName().toString();
-                                matcherPojo.addUtility(new WithUtilityPojo(
-                                        matcherPojo.getDestinationName(),
-                                        utilityElement.getQualifiedName().toString(),
-                                        methodName,
-                                        methodName.substring(0, 1).toUpperCase() + methodName.substring(1),
-                                        returnType));
-                            });
+            try {
+                Filer filer = processingEnv.getFiler();
+                JavaFileObject sourceFile =
+                        filer.createSourceFile(destinationElement.getQualifiedName() + "Matcher");
+                try (Writer writer = sourceFile.openWriter()) {
+                    writer.write(MatcherGenerator.generateSourceCode(matcherPojo));
                 }
-
-                try {
-                    Filer filer = processingEnv.getFiler();
-                    JavaFileObject sourceFile =
-                            filer.createSourceFile(destinationElement.getQualifiedName() + "Matcher");
-                    try (Writer writer = sourceFile.openWriter()) {
-                        writer.write(MatcherGenerator.generateSourceCode(matcherPojo));
-                    }
-                } catch (IOException e) {
-                    throw new IllegalStateException("Unable to write file.", e);
-                }
+            } catch (IOException e) {
+                throw new IllegalStateException("Unable to write file.", e);
             }
         }
         return true;
+    }
+
+    private void processBuildMatcherAnnotation(
+            Map<String, MatcherSettings> candidates, Element element, AnnotationMirror mirror) {
+        try {
+            String qualifiedClassName = getQualifiedClassName(mirror);
+
+            TypeElement destinationElement = processingEnv.getElementUtils().getTypeElement(qualifiedClassName);
+            if (destinationElement.getModifiers().contains(Modifier.ABSTRACT)) {
+                throw Exceptions.formatMessage(
+                        message -> new ProcessingException(Diagnostic.Kind.ERROR, message),
+                        "Can not use BuildMatcher with abstract type {}.",
+                        destinationElement.getQualifiedName());
+            }
+
+            MatcherSettings settings = new MatcherSettings(destinationElement, getUtilities(mirror));
+            candidates.compute(qualifiedClassName, (c, old) -> merge(settings, old));
+        } catch (ProcessingException e) {
+            processingEnv.getMessager().printMessage(e.getKind(), e.getMessage(), element);
+        }
+    }
+
+    private String getQualifiedClassName(AnnotationMirror mirror) throws ProcessingException {
+        String qualifiedClassName;
+        String pojo = getPojo(mirror);
+        String value = getValue(mirror);
+        if (pojo != null) {
+            qualifiedClassName = pojo;
+        } else if (value != null) {
+            qualifiedClassName = value;
+        } else {
+            throw new ProcessingException(Diagnostic.Kind.ERROR,
+                    "@BuildMatcher pojo() or value() must be set.");
+        }
+        return qualifiedClassName;
     }
 
     private String getReturnTypeAsString(ExecutableElement executableElement) {
@@ -223,24 +213,12 @@ public class SynapseProcessor extends AbstractProcessor {
         return null;
     }
 
-    public String getValue(TypeElement element) {
-        return getValue(getAnnotationMirror(element, BuildMatcher.class));
-    }
-
     private String getValue(AnnotationMirror mirror) {
         return qualifiedName(getAnnotationValue(mirror, "value"));
     }
 
-    public String getPojo(TypeElement element) {
-        return getPojo(getAnnotationMirror(element, BuildMatcher.class));
-    }
-
     private String getPojo(AnnotationMirror mirror) {
         return qualifiedName(getAnnotationValue(mirror, "pojo"));
-    }
-
-    public List<String> getUtilities(TypeElement element) {
-        return getUtilities(getAnnotationMirror(element, BuildMatcher.class));
     }
 
     private List<String> getUtilities(AnnotationMirror mirror) {
