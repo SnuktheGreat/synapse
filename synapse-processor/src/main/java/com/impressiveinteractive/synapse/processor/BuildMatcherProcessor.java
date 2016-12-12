@@ -44,33 +44,35 @@ import static java.util.stream.Collectors.toList;
         "com.impressiveinteractive.synapse.processor.BuildMatchers",
         "com.impressiveinteractive.synapse.processor.BuildMatcher"})
 @SupportedSourceVersion(SourceVersion.RELEASE_8)
-public class SynapseProcessor extends AbstractProcessor {
+public class BuildMatcherProcessor extends AbstractProcessor {
 
     @Override
     @SuppressWarnings("unchecked")
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
         Map<String, MatcherSettings> candidates = new HashMap<>();
-        for (Element element : roundEnv.getElementsAnnotatedWith(BuildMatcher.class)) {
-            if (element instanceof TypeElement && element.getAnnotation(Generated.class) == null) {
-                TypeElement typeElement = (TypeElement) element;
+        roundEnv.getElementsAnnotatedWith(BuildMatcher.class).stream()
+                .filter(element -> element instanceof TypeElement)
+                .filter(element -> element.getAnnotation(Generated.class) == null)
+                .forEach(element -> {
+                    TypeElement typeElement = (TypeElement) element;
 
-                AnnotationMirror mirror = getAnnotationMirror(typeElement, BuildMatcher.class);
+                    AnnotationMirror mirror = getAnnotationMirror(typeElement, BuildMatcher.class);
 
-                processBuildMatcherAnnotation(candidates, element, mirror);
-            }
-        }
+                    processBuildMatcherAnnotation(candidates, element, mirror);
+                });
 
-        for (Element element : roundEnv.getElementsAnnotatedWith(BuildMatchers.class)) {
-            if (element instanceof TypeElement && element.getAnnotation(Generated.class) == null) {
-                TypeElement typeElement = (TypeElement) element;
-                AnnotationMirror buildMatchers = getAnnotationMirror(typeElement, BuildMatchers.class);
-                Optional.ofNullable(getAnnotationValue(buildMatchers, "value"))
-                        .map(AnnotationValue::getValue)
-                        .map(value -> (List<AnnotationMirror>) value)
-                        .orElse(Collections.emptyList())
-                        .forEach(child -> processBuildMatcherAnnotation(candidates, typeElement, child));
-            }
-        }
+        roundEnv.getElementsAnnotatedWith(BuildMatchers.class).stream()
+                .filter(element -> element instanceof TypeElement)
+                .filter(element -> element.getAnnotation(Generated.class) == null)
+                .forEach(element -> {
+                    TypeElement typeElement = (TypeElement) element;
+                    AnnotationMirror buildMatchers = getAnnotationMirror(typeElement, BuildMatchers.class);
+                    Optional.ofNullable(getAnnotationValue(buildMatchers, "value"))
+                            .map(AnnotationValue::getValue)
+                            .map(value -> (List<AnnotationMirror>) value)
+                            .orElse(Collections.emptyList())
+                            .forEach(child -> processBuildMatcherAnnotation(candidates, typeElement, child));
+                });
 
         for (MatcherSettings settings : candidates.values()) {
             TypeElement destinationElement = settings.destination;
@@ -78,25 +80,29 @@ public class SynapseProcessor extends AbstractProcessor {
                     ClassNameUtility.extractPackage(destinationElement.getQualifiedName().toString()),
                     ClassNameUtility.extractClass(destinationElement.getQualifiedName().toString()));
 
-            destinationElement.getEnclosedElements().stream()
-                    .filter(enclosed -> enclosed instanceof ExecutableElement)
-                    .map(enclosed -> (ExecutableElement) enclosed)
-                    .filter(executableElement -> executableElement.getKind() == ElementKind.METHOD)
-                    .filter(executableElement -> executableElement.getReturnType().getKind() != TypeKind.VOID)
-                    .filter(executableElement -> executableElement.getParameters().isEmpty())
-                    .filter(executableElement -> executableElement.getModifiers().contains(Modifier.PUBLIC))
-                    .filter(executableElement -> !executableElement.getModifiers().contains(Modifier.STATIC))
-                    .forEach(executableElement -> {
-                        String returnType = getReturnTypeAsString(executableElement);
-                        String simplifiedName = executableElement.getSimpleName().toString()
-                                .replaceAll("^(get|is)([A-Z].*$)", "$2");
+            TypeElement candidateType = destinationElement;
+            while (!candidateType.getQualifiedName().toString().equals(Object.class.getCanonicalName())) {
+                candidateType.getEnclosedElements().stream()
+                        .filter(enclosed -> enclosed instanceof ExecutableElement)
+                        .map(enclosed -> (ExecutableElement) enclosed)
+                        .filter(executableElement -> executableElement.getKind() == ElementKind.METHOD)
+                        .filter(executableElement -> executableElement.getReturnType().getKind() != TypeKind.VOID)
+                        .filter(executableElement -> executableElement.getParameters().isEmpty())
+                        .filter(executableElement -> executableElement.getModifiers().contains(Modifier.PUBLIC))
+                        .filter(executableElement -> !executableElement.getModifiers().contains(Modifier.STATIC))
+                        .forEach(executableElement -> {
+                            String returnType = getReturnTypeAsString(executableElement);
+                            String simplifiedName = executableElement.getSimpleName().toString()
+                                    .replaceAll("^(get|is)([A-Z].*$)", "$2");
 
-                        matcherPojo.addGetterLike(new WithGetterLikePojo(
-                                matcherPojo.getDestinationName(),
-                                executableElement.getSimpleName().toString(),
-                                simplifiedName.substring(0, 1).toUpperCase() + simplifiedName.substring(1),
-                                returnType));
-                    });
+                            matcherPojo.addGetterLike(new WithGetterLikePojo(
+                                    matcherPojo.getDestinationName(),
+                                    executableElement.getSimpleName().toString(),
+                                    simplifiedName.substring(0, 1).toUpperCase() + simplifiedName.substring(1),
+                                    returnType));
+                        });
+                candidateType = (TypeElement) processingEnv.getTypeUtils().asElement(candidateType.getSuperclass());
+            }
 
             for (String utility : settings.utilities) {
                 TypeElement utilityElement = processingEnv.getElementUtils().getTypeElement(utility);
@@ -106,8 +112,8 @@ public class SynapseProcessor extends AbstractProcessor {
                         .filter(executableElement -> executableElement.getKind() == ElementKind.METHOD)
                         .filter(executableElement -> executableElement.getReturnType().getKind() != TypeKind.VOID)
                         .filter(executableElement -> executableElement.getParameters().size() == 1)
-                        .filter(executableElement -> processingEnv.getTypeUtils().asElement(
-                                executableElement.getParameters().get(0).asType()).equals(destinationElement))
+                        .filter(executableElement ->
+                                instanceOf(destinationElement, executableElement.getParameters().get(0).asType()))
                         .filter(executableElement -> executableElement.getModifiers().contains(Modifier.PUBLIC))
                         .filter(executableElement -> executableElement.getModifiers().contains(Modifier.STATIC))
                         .forEach(executableElement -> {
@@ -248,6 +254,18 @@ public class SynapseProcessor extends AbstractProcessor {
                 .map(TypeElement::getQualifiedName)
                 .map(Object::toString)
                 .collect(toList());
+    }
+
+    private boolean instanceOf(TypeElement candidate, TypeMirror expected) {
+        TypeElement expectedType = (TypeElement) processingEnv.getTypeUtils().asElement(expected);
+        TypeElement typeInHierarchy = candidate;
+        do {
+            if (typeInHierarchy.equals(expectedType)) {
+                return true;
+            }
+            typeInHierarchy = (TypeElement) processingEnv.getTypeUtils().asElement(typeInHierarchy.getSuperclass());
+        } while (!typeInHierarchy.getQualifiedName().toString().equals(Object.class.getCanonicalName()));
+        return false;
     }
 
     private static class MatcherSettings {

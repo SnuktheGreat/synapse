@@ -8,7 +8,7 @@ package <matcher.packageName>;
 
 <matcher.imports:writeImport(); separator="\n">
 
-@Generated("com.impressiveinteractive.synapse.processor.SynapseProcessor")
+@Generated("com.impressiveinteractive.synapse.processor.BuildMatcherProcessor")
 public class <matcher.destinationName>Matcher extends ChainableMatcher\<<matcher.destinationName>\> {
     public static <matcher.destinationName>Matcher <matcher.propertyName>() {
         return new <matcher.destinationName>Matcher();
@@ -19,19 +19,19 @@ public class <matcher.destinationName>Matcher extends ChainableMatcher\<<matcher
     }
 
     @Override
-    public \<V\> <matcher.destinationName>Matcher where(SerializableFunction\<<matcher.destinationName>, V\> valueExtractor, Matcher\<? super V\> matcher) {
+    public \<V\> <matcher.destinationName>Matcher where(SerializableFunction\<? super <matcher.destinationName>, V\> valueExtractor, Matcher\<? super V\> matcher) {
         super.where(valueExtractor, matcher);
         return this;
     }
 
     @Override
-    public \<V\> <matcher.destinationName>Matcher where(String description, SerializableFunction\<<matcher.destinationName>, V\> valueExtractor, Matcher\<? super V\> matcher) {
+    public \<V\> <matcher.destinationName>Matcher where(String description, SerializableFunction\<? super <matcher.destinationName>, V\> valueExtractor, Matcher\<? super V\> matcher) {
         super.where(description, valueExtractor, matcher);
         return this;
     }
 
     @Override
-    public \<V1, V2\> <matcher.destinationName>Matcher where(FieldMapper\<<matcher.destinationName>, V1, V2\> mapper, Matcher\<? super V2\> matcher) {
+    public \<V1, V2\> <matcher.destinationName>Matcher where(FieldMapper\<? super <matcher.destinationName>, V1, V2\> mapper, Matcher\<? super V2\> matcher) {
         super.where(mapper, matcher);
         return this;
     }

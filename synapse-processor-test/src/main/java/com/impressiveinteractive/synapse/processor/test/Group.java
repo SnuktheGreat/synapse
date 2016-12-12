@@ -7,11 +7,11 @@ public class Group {
 
     private final List<Person> all;
 
-    public static Group with(Person... persons) {
+    public static Group of(Person... persons) {
         return new Group(Arrays.asList(persons));
     }
 
-    private Group(List<Person> all) {
+    protected Group(List<Person> all) {
         this.all = all;
     }
 

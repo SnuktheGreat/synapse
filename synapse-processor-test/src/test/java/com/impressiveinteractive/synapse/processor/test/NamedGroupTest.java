@@ -4,7 +4,7 @@ import com.impressiveinteractive.synapse.processor.BuildMatcher;
 import com.impressiveinteractive.synapse.processor.BuildMatchers;
 import org.junit.Test;
 
-import static com.impressiveinteractive.synapse.processor.test.GroupMatcher.group;
+import static com.impressiveinteractive.synapse.processor.test.NamedGroupMatcher.namedGroup;
 import static com.impressiveinteractive.synapse.processor.test.Person.Gender.FEMALE;
 import static com.impressiveinteractive.synapse.processor.test.Person.Gender.MALE;
 import static com.impressiveinteractive.synapse.processor.test.PersonMatcher.person;
@@ -14,11 +14,12 @@ import static org.junit.Assert.assertThat;
 
 @BuildMatchers({
         @BuildMatcher(Person.class),
-        @BuildMatcher(pojo = Group.class, utilities = PeopleUtilities.class)})
-public class GroupTest {
+        @BuildMatcher(pojo = NamedGroup.class, utilities = PeopleUtilities.class)})
+public class NamedGroupTest {
     @Test
     public void testGeneratedMatcher() throws Exception {
-        Group doctors = Group.of(
+        NamedGroup doctors = NamedGroup.of(
+                "Doctors",
                 Person.name("Gregory", "House").gender(MALE),
                 Person.name("James", "Wilson").gender(MALE),
                 Person.name("Lisa", "Cuddy").gender(FEMALE),
@@ -27,7 +28,8 @@ public class GroupTest {
                 Person.name("Robert", "Chase").gender(MALE),
                 Person.name("Remy", "Hadley").gender(FEMALE),
                 Person.name("Chris", "Taub").gender(MALE));
-        assertThat(doctors, is(group()
+        assertThat(doctors, is(namedGroup()
+                .withName(is("Doctors"))
                 .withMen(containsInAnyOrder(
                         person().withFirstName(is("Gregory")),
                         person().withFirstName(is("James")),
