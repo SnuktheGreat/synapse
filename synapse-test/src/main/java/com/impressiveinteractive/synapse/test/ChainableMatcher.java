@@ -271,7 +271,7 @@ public class ChainableMatcher<T> extends BaseMatcher<T> {
      */
     public <V1, V2> ChainableMatcher<T> where(FieldMapper<T, V1, V2> mapper, Matcher<? super V2> matcher) {
         fieldMatchers.add(new FieldMatcher<>(requireNonNull(mapper), requireNonNull(matcher)));
-        return ChainableMatcher.this;
+        return this;
     }
 
     private String describeMismatch(String fieldName, Object fieldValue, FieldMatcher<?> subMatcher) {

@@ -18,6 +18,24 @@ public class <matcher.destinationName>Matcher extends ChainableMatcher\<<matcher
         super(<matcher.destinationName>.class);
     }
 
+    @Override
+    public \<V\> <matcher.destinationName>Matcher where(SerializableFunction\<<matcher.destinationName>, V\> valueExtractor, Matcher\<? super V\> matcher) {
+        super.where(valueExtractor, matcher);
+        return this;
+    }
+
+    @Override
+    public \<V\> <matcher.destinationName>Matcher where(String description, SerializableFunction\<<matcher.destinationName>, V\> valueExtractor, Matcher\<? super V\> matcher) {
+        super.where(description, valueExtractor, matcher);
+        return this;
+    }
+
+    @Override
+    public \<V1, V2\> <matcher.destinationName>Matcher where(FieldMapper\<<matcher.destinationName>, V1, V2\> mapper, Matcher\<? super V2\> matcher) {
+        super.where(mapper, matcher);
+        return this;
+    }
+
     <matcher.getterLikes:writeGetterLike(); separator="\n\n">
 
     <matcher.utilities:writeUtility(); separator="\n\n">

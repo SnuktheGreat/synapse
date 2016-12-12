@@ -1,5 +1,6 @@
 package com.impressiveinteractive.synapse.processor.pojo;
 
+import com.impressiveinteractive.synapse.lambda.SerializableFunction;
 import com.impressiveinteractive.synapse.test.ChainableMatcher;
 
 import javax.annotation.Generated;
@@ -27,6 +28,7 @@ public class MatcherPojo implements ImportHolder {
         this.destinationName = destinationName;
 
         imports.add(Generated.class.getCanonicalName());
+        imports.add(SerializableFunction.class.getCanonicalName());
         imports.add(packageName + "." + destinationName);
         imports.add(ChainableMatcher.class.getCanonicalName());
     }
