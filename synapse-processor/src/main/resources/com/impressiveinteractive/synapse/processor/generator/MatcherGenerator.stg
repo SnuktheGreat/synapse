@@ -4,34 +4,34 @@ group MatcherGenerator;
  * The main template that generates the Matcher class.
  */
 main(matcher) ::= <<
-package <matcher.packageName>;
+package <matcher.destinationPackage>;
 
 <matcher.imports:writeImport(); separator="\n">
 
 @Generated("com.impressiveinteractive.synapse.processor.BuildMatcherProcessor")
-public class <matcher.destinationName>Matcher extends ChainableMatcher\<<matcher.destinationName>\> {
-    public static <matcher.destinationName>Matcher <matcher.propertyName>() {
-        return new <matcher.destinationName>Matcher();
+public class <matcher.destinationName> extends ChainableMatcher\<<matcher.pojoName>\> {
+    public static <matcher.destinationName> <matcher.propertyName>() {
+        return new <matcher.destinationName>();
     }
 
-    public <matcher.destinationName>Matcher() {
-        super(<matcher.destinationName>.class);
+    public <matcher.destinationName>() {
+        super(<matcher.pojoName>.class);
     }
 
     @Override
-    public \<V\> <matcher.destinationName>Matcher where(SerializableFunction\<? super <matcher.destinationName>, V\> valueExtractor, Matcher\<? super V\> matcher) {
+    public \<V\> <matcher.destinationName> where(SerializableFunction\<? super <matcher.pojoName>, V\> valueExtractor, Matcher\<? super V\> matcher) {
         super.where(valueExtractor, matcher);
         return this;
     }
 
     @Override
-    public \<V\> <matcher.destinationName>Matcher where(String description, SerializableFunction\<? super <matcher.destinationName>, V\> valueExtractor, Matcher\<? super V\> matcher) {
+    public \<V\> <matcher.destinationName> where(String description, SerializableFunction\<? super <matcher.pojoName>, V\> valueExtractor, Matcher\<? super V\> matcher) {
         super.where(description, valueExtractor, matcher);
         return this;
     }
 
     @Override
-    public \<V1, V2\> <matcher.destinationName>Matcher where(FieldMapper\<? super <matcher.destinationName>, V1, V2\> mapper, Matcher\<? super V2\> matcher) {
+    public \<V1, V2\> <matcher.destinationName> where(FieldMapper\<? super <matcher.pojoName>, V1, V2\> mapper, Matcher\<? super V2\> matcher) {
         super.where(mapper, matcher);
         return this;
     }
@@ -51,8 +51,8 @@ writeImport(imp) ::= "import <imp>;"
  * Generates a with* method that uses a getter like method on the destination type.
  */
 writeGetterLike(getterLike) ::= <<
-public <getterLike.destinationName>Matcher with<getterLike.propertyName>(Matcher\<? super <getterLike.simpleReturnType>\> matcher) {
-    where(<getterLike.destinationName>::<getterLike.methodName>, matcher);
+public <getterLike.destinationName> with<getterLike.propertyName>(Matcher\<? super <getterLike.simpleReturnType>\> matcher) {
+    where(<getterLike.pojoName>::<getterLike.methodName>, matcher);
     return this;
 }
 >>
@@ -61,7 +61,7 @@ public <getterLike.destinationName>Matcher with<getterLike.propertyName>(Matcher
  * Generates a with* method that uses a custom name and utility method.
  */
 writeUtility(utility) ::= <<
-public <utility.destinationName>Matcher with<utility.propertyName>(Matcher\<? super <utility.simpleReturnType>\> matcher) {
+public <utility.destinationName> with<utility.propertyName>(Matcher\<? super <utility.simpleReturnType>\> matcher) {
     where("<utility.methodName>", <utility.simpleUtilityType>::<utility.methodName>, matcher);
     return this;
 }

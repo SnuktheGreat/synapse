@@ -18,18 +18,20 @@ public class MatcherPojo implements ImportHolder {
 
     private final Set<String> imports = new TreeSet<>();
 
-    private final String packageName;
+    private final String pojoName;
+    private final String destinationPackage;
     private final String destinationName;
     private final List<WithGetterLikePojo> getterLikes = new ArrayList<>();
     private final List<WithUtilityPojo> utilities = new ArrayList<>();
 
-    public MatcherPojo(String packageName, String destinationName) {
-        this.packageName = packageName;
+    public MatcherPojo(String pojoCanonicalName, String pojoName, String destinationPackage, String destinationName) {
+        this.pojoName = pojoName;
+        this.destinationPackage = destinationPackage;
         this.destinationName = destinationName;
 
         imports.add(Generated.class.getCanonicalName());
         imports.add(SerializableFunction.class.getCanonicalName());
-        imports.add(packageName + "." + destinationName);
+        imports.add(pojoCanonicalName);
         imports.add(ChainableMatcher.class.getCanonicalName());
     }
 
@@ -50,8 +52,12 @@ public class MatcherPojo implements ImportHolder {
         return imports;
     }
 
-    public String getPackageName() {
-        return packageName;
+    public String getPojoName() {
+        return pojoName;
+    }
+
+    public String getDestinationPackage() {
+        return destinationPackage;
     }
 
     public String getDestinationName() {
@@ -59,7 +65,7 @@ public class MatcherPojo implements ImportHolder {
     }
 
     public String getPropertyName() {
-        return destinationName.substring(0, 1).toLowerCase() + destinationName.substring(1);
+        return pojoName.substring(0, 1).toLowerCase() + pojoName.substring(1);
     }
 
     public List<WithGetterLikePojo> getGetterLikes() {

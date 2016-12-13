@@ -49,7 +49,7 @@ public class BuildMatcherProcessor extends AbstractProcessor {
     @Override
     @SuppressWarnings("unchecked")
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
-        Map<String, MatcherSettings> candidates = new HashMap<>();
+        Map<String, BuildMatcherData> dataByDestination = new HashMap<>();
         roundEnv.getElementsAnnotatedWith(BuildMatcher.class).stream()
                 .filter(element -> element instanceof TypeElement)
                 .filter(element -> element.getAnnotation(Generated.class) == null)
@@ -58,7 +58,7 @@ public class BuildMatcherProcessor extends AbstractProcessor {
 
                     AnnotationMirror mirror = getAnnotationMirror(typeElement, BuildMatcher.class);
 
-                    processBuildMatcherAnnotation(candidates, element, mirror);
+                    processBuildMatcherAnnotation(dataByDestination, element, mirror);
                 });
 
         roundEnv.getElementsAnnotatedWith(BuildMatchers.class).stream()
@@ -71,14 +71,16 @@ public class BuildMatcherProcessor extends AbstractProcessor {
                             .map(AnnotationValue::getValue)
                             .map(value -> (List<AnnotationMirror>) value)
                             .orElse(Collections.emptyList())
-                            .forEach(child -> processBuildMatcherAnnotation(candidates, typeElement, child));
+                            .forEach(child -> processBuildMatcherAnnotation(dataByDestination, typeElement, child));
                 });
 
-        for (MatcherSettings settings : candidates.values()) {
-            TypeElement destinationElement = settings.destination;
+        for (BuildMatcherData settings : dataByDestination.values()) {
+            TypeElement destinationElement = settings.pojoElement;
             MatcherPojo matcherPojo = new MatcherPojo(
-                    ClassNameUtility.extractPackage(destinationElement.getQualifiedName().toString()),
-                    ClassNameUtility.extractClass(destinationElement.getQualifiedName().toString()));
+                    destinationElement.getQualifiedName().toString(),
+                    ClassNameUtility.extractClass(destinationElement.getQualifiedName().toString()),
+                    settings.destinationPackage,
+                    settings.destinationName);
 
             TypeElement candidateType = destinationElement;
             while (!candidateType.getQualifiedName().toString().equals(Object.class.getCanonicalName())) {
@@ -96,6 +98,7 @@ public class BuildMatcherProcessor extends AbstractProcessor {
                                     .replaceAll("^(get|is)([A-Z].*$)", "$2");
 
                             matcherPojo.addGetterLike(new WithGetterLikePojo(
+                                    matcherPojo.getPojoName(),
                                     matcherPojo.getDestinationName(),
                                     executableElement.getSimpleName().toString(),
                                     simplifiedName.substring(0, 1).toUpperCase() + simplifiedName.substring(1),
@@ -121,6 +124,7 @@ public class BuildMatcherProcessor extends AbstractProcessor {
 
                             String methodName = executableElement.getSimpleName().toString();
                             matcherPojo.addUtility(new WithUtilityPojo(
+                                    matcherPojo.getPojoName(),
                                     matcherPojo.getDestinationName(),
                                     utilityElement.getQualifiedName().toString(),
                                     methodName,
@@ -132,7 +136,7 @@ public class BuildMatcherProcessor extends AbstractProcessor {
             try {
                 Filer filer = processingEnv.getFiler();
                 JavaFileObject sourceFile =
-                        filer.createSourceFile(destinationElement.getQualifiedName() + "Matcher");
+                        filer.createSourceFile(settings.destinationPackage + "." + settings.destinationName);
                 try (Writer writer = sourceFile.openWriter()) {
                     writer.write(MatcherGenerator.generateSourceCode(matcherPojo));
                 }
@@ -144,38 +148,51 @@ public class BuildMatcherProcessor extends AbstractProcessor {
     }
 
     private void processBuildMatcherAnnotation(
-            Map<String, MatcherSettings> candidates, Element element, AnnotationMirror mirror) {
+            Map<String, BuildMatcherData> candidates, Element element, AnnotationMirror mirror) {
         try {
-            String qualifiedClassName = getQualifiedClassName(mirror);
+            TypeElement pojo = Optional.ofNullable(getTypeElement(getAnnotationValue(mirror, "pojo")))
+                    .orElse(getTypeElement(getAnnotationValue(mirror, "value")));
+            if (pojo == null) {
+                throw new ProcessingException(Diagnostic.Kind.ERROR, "@BuildMatcher pojo() or value() must be set.");
+            }
 
-            TypeElement destinationElement = processingEnv.getElementUtils().getTypeElement(qualifiedClassName);
-            if (destinationElement.getModifiers().contains(Modifier.ABSTRACT)) {
+            String qualifiedClassName = pojo.getQualifiedName().toString();
+            String destinationPackage = Optional.ofNullable(getAnnotationValue(mirror, "destinationPackage"))
+                    .map(AnnotationValue::getValue)
+                    .map(v -> (String) v)
+                    .orElse(ClassNameUtility.extractPackage(qualifiedClassName));
+
+            String destinationName = Optional.ofNullable(getAnnotationValue(mirror, "destinationName"))
+                    .map(AnnotationValue::getValue)
+                    .map(v -> (String) v)
+                    .orElse(ClassNameUtility.extractClass(qualifiedClassName) + "Matcher");
+
+            String fullDestination = destinationPackage + "." + destinationName;
+
+            TypeElement pojoElement = processingEnv.getElementUtils().getTypeElement(qualifiedClassName);
+            if (pojoElement.getModifiers().contains(Modifier.ABSTRACT)) {
                 throw Exceptions.formatMessage(
                         message -> new ProcessingException(Diagnostic.Kind.ERROR, message),
                         "Can not use BuildMatcher with abstract type {}.",
-                        destinationElement.getQualifiedName());
+                        pojoElement.getQualifiedName());
             }
 
-            MatcherSettings settings = new MatcherSettings(destinationElement, getUtilities(mirror));
-            candidates.compute(qualifiedClassName, (c, old) -> merge(settings, old));
+            List<String> utilities = qualifiedNames(getAnnotationValue(mirror, "utilities"));
+
+            BuildMatcherData settings = new BuildMatcherData(
+                    pojoElement, destinationPackage, destinationName, utilities);
+            BuildMatcherData previous = candidates.get(fullDestination);
+            if (previous != null && !settings.pojoElement.equals(previous.pojoElement)) {
+                throw Exceptions.formatMessage(
+                        message -> new ProcessingException(Diagnostic.Kind.ERROR, message),
+                        "BuildMatcher with destination {} already defined, but with different type {}.",
+                        fullDestination,
+                        pojoElement.getQualifiedName());
+            }
+            candidates.compute(fullDestination, (c, old) -> merge(settings, old));
         } catch (ProcessingException e) {
             processingEnv.getMessager().printMessage(e.getKind(), e.getMessage(), element);
         }
-    }
-
-    private String getQualifiedClassName(AnnotationMirror mirror) throws ProcessingException {
-        String qualifiedClassName;
-        String pojo = getPojo(mirror);
-        String value = getValue(mirror);
-        if (pojo != null) {
-            qualifiedClassName = pojo;
-        } else if (value != null) {
-            qualifiedClassName = value;
-        } else {
-            throw new ProcessingException(Diagnostic.Kind.ERROR,
-                    "@BuildMatcher pojo() or value() must be set.");
-        }
-        return qualifiedClassName;
     }
 
     private String getReturnTypeAsString(ExecutableElement executableElement) {
@@ -190,7 +207,7 @@ public class BuildMatcherProcessor extends AbstractProcessor {
         return returnType;
     }
 
-    private MatcherSettings merge(MatcherSettings settings, MatcherSettings old) {
+    private BuildMatcherData merge(BuildMatcherData settings, BuildMatcherData old) {
         if (old == null) {
             return settings;
         } else {
@@ -219,25 +236,11 @@ public class BuildMatcherProcessor extends AbstractProcessor {
         return null;
     }
 
-    private String getValue(AnnotationMirror mirror) {
-        return qualifiedName(getAnnotationValue(mirror, "value"));
-    }
-
-    private String getPojo(AnnotationMirror mirror) {
-        return qualifiedName(getAnnotationValue(mirror, "pojo"));
-    }
-
-    private List<String> getUtilities(AnnotationMirror mirror) {
-        return qualifiedNames(getAnnotationValue(mirror, "utilities"));
-    }
-
-    private String qualifiedName(AnnotationValue annotationValue) {
+    private TypeElement getTypeElement(AnnotationValue annotationValue) {
         return Optional.ofNullable(annotationValue)
                 .map(AnnotationValue::getValue)
                 .map(value -> (TypeMirror) value)
                 .map(mirror -> (TypeElement) processingEnv.getTypeUtils().asElement(mirror))
-                .map(TypeElement::getQualifiedName)
-                .map(Object::toString)
                 .orElse(null);
     }
 
@@ -268,12 +271,20 @@ public class BuildMatcherProcessor extends AbstractProcessor {
         return false;
     }
 
-    private static class MatcherSettings {
-        private final TypeElement destination;
+    private static class BuildMatcherData {
+        private final String destinationPackage;
+        private final String destinationName;
+        private final TypeElement pojoElement;
         private final Set<String> utilities = new HashSet<>();
 
-        private MatcherSettings(TypeElement destination, Collection<String> utilities) {
-            this.destination = destination;
+        private BuildMatcherData(
+                TypeElement pojoElement,
+                String destinationPackage,
+                String destinationName,
+                Collection<String> utilities) {
+            this.pojoElement = pojoElement;
+            this.destinationPackage = destinationPackage;
+            this.destinationName = destinationName;
             addUtilities(utilities);
         }
 

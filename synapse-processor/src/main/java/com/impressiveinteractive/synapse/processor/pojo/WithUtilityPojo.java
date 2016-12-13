@@ -15,13 +15,17 @@ public class WithUtilityPojo implements ImportHolder {
 
     private final Set<String> imports = new TreeSet<>();
 
+    private final String pojoName;
     private final String destinationName;
     private final String utilityType;
     private final String methodName;
     private final String propertyName;
     private final String returnType;
 
-    public WithUtilityPojo(String destinationName, String utilityType, String methodName, String propertyName, String returnType) {
+    public WithUtilityPojo(
+            String pojoName, String destinationName, String utilityType, String methodName,
+            String propertyName, String returnType) {
+        this.pojoName = pojoName;
         this.destinationName = destinationName;
         this.utilityType = utilityType;
         this.methodName = methodName;
@@ -36,6 +40,10 @@ public class WithUtilityPojo implements ImportHolder {
     @Override
     public Set<String> getImports() {
         return imports;
+    }
+
+    public String getPojoName() {
+        return pojoName;
     }
 
     public String getDestinationName() {
