@@ -1,4 +1,4 @@
-package com.impressiveinteractive.synapse.processor.test;
+package com.impressiveinteractive.synapse.processor.test.people;
 
 public class Person {
 

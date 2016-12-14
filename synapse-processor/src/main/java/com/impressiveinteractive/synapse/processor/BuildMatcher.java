@@ -42,4 +42,9 @@ public @interface BuildMatcher {
      * something else.
      */
     Class<?>[] utilities() default {};
+
+    /**
+     * @return Whether to include methods in {@link Object}.
+     */
+    boolean includeObjectMethods() default false;
 }

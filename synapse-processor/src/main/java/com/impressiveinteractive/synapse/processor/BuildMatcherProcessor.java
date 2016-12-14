@@ -74,6 +74,7 @@ public class BuildMatcherProcessor extends AbstractProcessor {
                             .forEach(child -> processBuildMatcherAnnotation(dataByDestination, typeElement, child));
                 });
 
+        TypeElement objectElement = processingEnv.getElementUtils().getTypeElement(Object.class.getCanonicalName());
         for (BuildMatcherData settings : dataByDestination.values()) {
             TypeElement destinationElement = settings.pojoElement;
             MatcherPojo matcherPojo = new MatcherPojo(
@@ -82,30 +83,28 @@ public class BuildMatcherProcessor extends AbstractProcessor {
                     settings.destinationPackage,
                     settings.destinationName);
 
-            TypeElement candidateType = destinationElement;
-            while (!candidateType.getQualifiedName().toString().equals(Object.class.getCanonicalName())) {
-                candidateType.getEnclosedElements().stream()
-                        .filter(enclosed -> enclosed instanceof ExecutableElement)
-                        .map(enclosed -> (ExecutableElement) enclosed)
-                        .filter(executableElement -> executableElement.getKind() == ElementKind.METHOD)
-                        .filter(executableElement -> executableElement.getReturnType().getKind() != TypeKind.VOID)
-                        .filter(executableElement -> executableElement.getParameters().isEmpty())
-                        .filter(executableElement -> executableElement.getModifiers().contains(Modifier.PUBLIC))
-                        .filter(executableElement -> !executableElement.getModifiers().contains(Modifier.STATIC))
-                        .forEach(executableElement -> {
-                            String returnType = getReturnTypeAsString(executableElement);
-                            String simplifiedName = executableElement.getSimpleName().toString()
-                                    .replaceAll("^(get|is)([A-Z].*$)", "$2");
+            processingEnv.getElementUtils().getAllMembers(destinationElement).stream()
+                    .filter(enclosed -> enclosed instanceof ExecutableElement)
+                    .map(enclosed -> (ExecutableElement) enclosed)
+                    .filter(executableElement -> settings.includeObjectMethods
+                            || !executableElement.getEnclosingElement().equals(objectElement))
+                    .filter(executableElement -> executableElement.getKind() == ElementKind.METHOD)
+                    .filter(executableElement -> executableElement.getReturnType().getKind() != TypeKind.VOID)
+                    .filter(executableElement -> executableElement.getParameters().isEmpty())
+                    .filter(executableElement -> executableElement.getModifiers().contains(Modifier.PUBLIC))
+                    .filter(executableElement -> !executableElement.getModifiers().contains(Modifier.STATIC))
+                    .forEach(executableElement -> {
+                        String returnType = getReturnTypeAsString(executableElement);
+                        String simplifiedName = executableElement.getSimpleName().toString()
+                                .replaceAll("^(get|is)([A-Z].*$)", "$2");
 
-                            matcherPojo.addGetterLike(new WithGetterLikePojo(
-                                    matcherPojo.getPojoName(),
-                                    matcherPojo.getDestinationName(),
-                                    executableElement.getSimpleName().toString(),
-                                    simplifiedName.substring(0, 1).toUpperCase() + simplifiedName.substring(1),
-                                    returnType));
-                        });
-                candidateType = (TypeElement) processingEnv.getTypeUtils().asElement(candidateType.getSuperclass());
-            }
+                        matcherPojo.addGetterLike(new WithGetterLikePojo(
+                                matcherPojo.getPojoName(),
+                                matcherPojo.getDestinationName(),
+                                executableElement.getSimpleName().toString(),
+                                simplifiedName.substring(0, 1).toUpperCase() + simplifiedName.substring(1),
+                                returnType));
+                    });
 
             for (String utility : settings.utilities) {
                 TypeElement utilityElement = processingEnv.getElementUtils().getTypeElement(utility);
@@ -167,6 +166,11 @@ public class BuildMatcherProcessor extends AbstractProcessor {
                     .map(v -> (String) v)
                     .orElse(ClassNameUtility.extractClass(qualifiedClassName) + "Matcher");
 
+            boolean includeObjectMethods = Optional.ofNullable(getAnnotationValue(mirror, "includeObjectMethods"))
+                    .map(AnnotationValue::getValue)
+                    .map(v -> (boolean) v)
+                    .orElse(false);
+
             String fullDestination = destinationPackage + "." + destinationName;
 
             TypeElement pojoElement = processingEnv.getElementUtils().getTypeElement(qualifiedClassName);
@@ -180,7 +184,7 @@ public class BuildMatcherProcessor extends AbstractProcessor {
             List<String> utilities = qualifiedNames(getAnnotationValue(mirror, "utilities"));
 
             BuildMatcherData settings = new BuildMatcherData(
-                    pojoElement, destinationPackage, destinationName, utilities);
+                    pojoElement, destinationPackage, destinationName, includeObjectMethods, utilities);
             BuildMatcherData previous = candidates.get(fullDestination);
             if (previous != null && !settings.pojoElement.equals(previous.pojoElement)) {
                 throw Exceptions.formatMessage(
@@ -275,16 +279,19 @@ public class BuildMatcherProcessor extends AbstractProcessor {
         private final String destinationPackage;
         private final String destinationName;
         private final TypeElement pojoElement;
+        private final boolean includeObjectMethods;
         private final Set<String> utilities = new HashSet<>();
 
         private BuildMatcherData(
                 TypeElement pojoElement,
                 String destinationPackage,
                 String destinationName,
+                boolean includeObjectMethods,
                 Collection<String> utilities) {
             this.pojoElement = pojoElement;
             this.destinationPackage = destinationPackage;
             this.destinationName = destinationName;
+            this.includeObjectMethods = includeObjectMethods;
             addUtilities(utilities);
         }
 

@@ -2,12 +2,15 @@ package com.impressiveinteractive.synapse.processor.test;
 
 import com.impressiveinteractive.synapse.processor.BuildMatcher;
 import com.impressiveinteractive.synapse.processor.BuildMatchers;
+import com.impressiveinteractive.synapse.processor.test.people.Group;
+import com.impressiveinteractive.synapse.processor.test.people.PeopleUtilities;
+import com.impressiveinteractive.synapse.processor.test.people.Person;
 import org.junit.Test;
 
-import static com.impressiveinteractive.synapse.processor.test.GroupMatcher.group;
-import static com.impressiveinteractive.synapse.processor.test.Person.Gender.FEMALE;
-import static com.impressiveinteractive.synapse.processor.test.Person.Gender.MALE;
-import static com.impressiveinteractive.synapse.processor.test.PersonMatcher.person;
+import static com.impressiveinteractive.synapse.processor.test.people.GroupMatcher.group;
+import static com.impressiveinteractive.synapse.processor.test.people.Person.Gender.FEMALE;
+import static com.impressiveinteractive.synapse.processor.test.people.Person.Gender.MALE;
+import static com.impressiveinteractive.synapse.processor.test.people.PersonMatcher.person;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
