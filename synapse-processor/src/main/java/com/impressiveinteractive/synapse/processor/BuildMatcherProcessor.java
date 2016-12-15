@@ -86,7 +86,7 @@ public class BuildMatcherProcessor extends AbstractProcessor {
             processingEnv.getElementUtils().getAllMembers(destinationElement).stream()
                     .filter(enclosed -> enclosed instanceof ExecutableElement)
                     .map(enclosed -> (ExecutableElement) enclosed)
-                    .filter(executableElement -> settings.includeObjectMethods
+                    .filter(executableElement -> !settings.skipObjectMethods
                             || !executableElement.getEnclosingElement().equals(objectElement))
                     .filter(executableElement -> executableElement.getKind() == ElementKind.METHOD)
                     .filter(executableElement -> executableElement.getReturnType().getKind() != TypeKind.VOID)
@@ -166,7 +166,7 @@ public class BuildMatcherProcessor extends AbstractProcessor {
                     .map(v -> (String) v)
                     .orElse(ClassNameUtility.extractClass(qualifiedClassName) + "Matcher");
 
-            boolean includeObjectMethods = Optional.ofNullable(getAnnotationValue(mirror, "includeObjectMethods"))
+            boolean skipObjectMethods = Optional.ofNullable(getAnnotationValue(mirror, "skipObjectMethods"))
                     .map(AnnotationValue::getValue)
                     .map(v -> (boolean) v)
                     .orElse(false);
@@ -178,7 +178,7 @@ public class BuildMatcherProcessor extends AbstractProcessor {
             List<String> utilities = qualifiedNames(getAnnotationValue(mirror, "utilities"));
 
             BuildMatcherData settings = new BuildMatcherData(
-                    pojoElement, destinationPackage, destinationName, includeObjectMethods, utilities);
+                    pojoElement, destinationPackage, destinationName, skipObjectMethods, utilities);
             BuildMatcherData previous = candidates.get(fullDestination);
             if (previous != null && !settings.pojoElement.equals(previous.pojoElement)) {
                 throw Exceptions.formatMessage(
@@ -273,19 +273,19 @@ public class BuildMatcherProcessor extends AbstractProcessor {
         private final String destinationPackage;
         private final String destinationName;
         private final TypeElement pojoElement;
-        private final boolean includeObjectMethods;
+        private final boolean skipObjectMethods;
         private final Set<String> utilities = new HashSet<>();
 
         private BuildMatcherData(
                 TypeElement pojoElement,
                 String destinationPackage,
                 String destinationName,
-                boolean includeObjectMethods,
+                boolean skipObjectMethods,
                 Collection<String> utilities) {
             this.pojoElement = pojoElement;
             this.destinationPackage = destinationPackage;
             this.destinationName = destinationName;
-            this.includeObjectMethods = includeObjectMethods;
+            this.skipObjectMethods = skipObjectMethods;
             addUtilities(utilities);
         }
 

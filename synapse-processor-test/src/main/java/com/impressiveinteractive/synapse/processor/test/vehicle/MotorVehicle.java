@@ -19,6 +19,11 @@ public abstract class MotorVehicle implements Vehicle {
         return Optional.of(fuel).map(Fuel::getPropulsion).orElse(null);
     }
 
+    @Override
+    public String toString() {
+        return "MotorVehicle with " + getPropulsion() + ".";
+    }
+
     public enum Fuel {
         PETROL("combustion engine (petrol)"),
         DIESEL("combustion engine (diesel)"),

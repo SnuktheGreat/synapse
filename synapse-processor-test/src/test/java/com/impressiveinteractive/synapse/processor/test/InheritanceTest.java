@@ -2,6 +2,9 @@ package com.impressiveinteractive.synapse.processor.test;
 
 import com.impressiveinteractive.synapse.processor.BuildMatcher;
 import com.impressiveinteractive.synapse.processor.BuildMatchers;
+import com.impressiveinteractive.synapse.processor.matchers.MotorVehicleMatcher;
+import com.impressiveinteractive.synapse.processor.matchers.VehicleCarMatcher;
+import com.impressiveinteractive.synapse.processor.matchers.VehicleMatcher;
 import com.impressiveinteractive.synapse.processor.test.vehicle.Car;
 import com.impressiveinteractive.synapse.processor.test.vehicle.MotorVehicle;
 import com.impressiveinteractive.synapse.processor.test.vehicle.Vehicle;
@@ -12,22 +15,24 @@ import static com.impressiveinteractive.synapse.processor.matchers.MotorVehicleM
 import static com.impressiveinteractive.synapse.processor.matchers.VehicleCarMatcher.car;
 import static com.impressiveinteractive.synapse.processor.matchers.VehicleMatcher.vehicle;
 import static com.impressiveinteractive.synapse.processor.test.vehicle.MotorVehicle.Fuel.PETROL;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 
 @BuildMatchers({
         @BuildMatcher(
                 pojo = Vehicle.class,
-                destinationPackage = "com.impressiveinteractive.synapse.processor.matchers"),
+                destinationPackage = "com.impressiveinteractive.synapse.processor.matchers",
+                skipObjectMethods = true),
         @BuildMatcher(
                 pojo = MotorVehicle.class,
-                destinationPackage = "com.impressiveinteractive.synapse.processor.matchers"),
+                destinationPackage = "com.impressiveinteractive.synapse.processor.matchers",
+                skipObjectMethods = true),
         @BuildMatcher(
                 pojo = Car.class,
                 destinationPackage = "com.impressiveinteractive.synapse.processor.matchers",
                 destinationName = "VehicleCarMatcher",
-                includeObjectMethods = true)
-})
+                skipObjectMethods = true)})
 public class InheritanceTest {
 
     private Car car;
@@ -64,5 +69,29 @@ public class InheritanceTest {
                 .withMaxSpeed(is(9000.0))
                 .withFuel(is(PETROL))
                 .withBrand(is("Mercedes"))));
+    }
+
+    @Test
+    public void skipObjectMethods() throws Exception {
+        assertThat(Methods.getWithMethodNames(VehicleMatcher.class),
+                containsInAnyOrder(
+                        "withPropulsion",
+                        "withMaxSpeed"));
+
+        assertThat(Methods.getWithMethodNames(MotorVehicleMatcher.class),
+                containsInAnyOrder(
+                        "withPropulsion",
+                        "withMaxSpeed",
+                        "withFuel",
+                        "withToString"));
+
+        assertThat(Methods.getWithMethodNames(VehicleCarMatcher.class),
+                containsInAnyOrder(
+                        "withPropulsion",
+                        "withMaxSpeed",
+                        "withFuel",
+                        "withBrand",
+                        "withToString",
+                        "withHashCode"));
     }
 }

@@ -44,7 +44,7 @@ public @interface BuildMatcher {
     Class<?>[] utilities() default {};
 
     /**
-     * @return Whether to include methods in {@link Object}.
+     * @return Whether to skip methods in {@link Object}. Overridden methods are always added.
      */
-    boolean includeObjectMethods() default false;
+    boolean skipObjectMethods() default false;
 }
