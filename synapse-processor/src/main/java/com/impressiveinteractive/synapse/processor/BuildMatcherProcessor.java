@@ -174,12 +174,6 @@ public class BuildMatcherProcessor extends AbstractProcessor {
             String fullDestination = destinationPackage + "." + destinationName;
 
             TypeElement pojoElement = processingEnv.getElementUtils().getTypeElement(qualifiedClassName);
-            if (pojoElement.getModifiers().contains(Modifier.ABSTRACT)) {
-                throw Exceptions.formatMessage(
-                        message -> new ProcessingException(Diagnostic.Kind.ERROR, message),
-                        "Can not use BuildMatcher with abstract type {}.",
-                        pojoElement.getQualifiedName());
-            }
 
             List<String> utilities = qualifiedNames(getAnnotationValue(mirror, "utilities"));
 
