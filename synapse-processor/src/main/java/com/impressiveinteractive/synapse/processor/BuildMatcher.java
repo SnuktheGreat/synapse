@@ -38,6 +38,12 @@ public @interface BuildMatcher {
     String destinationName() default "";
 
     /**
+     * @return The name of the static method that creates an instance of the matcher. Will use the {@link #pojo()} name,
+     * starting with a lowercase letter on empty.
+     */
+    String staticMethodName() default "";
+
+    /**
      * @return Utility classes containing further public static methods that convert the {@link #pojo()} type to
      * something else.
      */

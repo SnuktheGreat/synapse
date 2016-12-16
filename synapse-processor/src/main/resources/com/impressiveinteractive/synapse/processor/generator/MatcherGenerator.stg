@@ -10,7 +10,7 @@ package <matcher.destinationPackage>;
 
 @Generated("com.impressiveinteractive.synapse.processor.BuildMatcherProcessor")
 public class <matcher.destinationName> extends ChainableMatcher\<<matcher.pojoName>\> {
-    public static <matcher.destinationName> <matcher.propertyName>() {
+    public static <matcher.destinationName> <matcher.staticMethodName>() {
         return new <matcher.destinationName>();
     }
 

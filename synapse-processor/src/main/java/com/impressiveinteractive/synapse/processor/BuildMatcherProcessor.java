@@ -81,7 +81,8 @@ public class BuildMatcherProcessor extends AbstractProcessor {
                     destinationElement.getQualifiedName().toString(),
                     ClassNameUtility.extractClass(destinationElement.getQualifiedName().toString()),
                     settings.destinationPackage,
-                    settings.destinationName);
+                    settings.destinationName,
+                    settings.staticMethodName);
 
             processingEnv.getElementUtils().getAllMembers(destinationElement).stream()
                     .filter(enclosed -> enclosed instanceof ExecutableElement)
@@ -161,10 +162,16 @@ public class BuildMatcherProcessor extends AbstractProcessor {
                     .map(v -> (String) v)
                     .orElse(ClassNameUtility.extractPackage(qualifiedClassName));
 
+            String pojoClassName = ClassNameUtility.extractClass(qualifiedClassName);
             String destinationName = Optional.ofNullable(getAnnotationValue(mirror, "destinationName"))
                     .map(AnnotationValue::getValue)
                     .map(v -> (String) v)
-                    .orElse(ClassNameUtility.extractClass(qualifiedClassName) + "Matcher");
+                    .orElse(pojoClassName + "Matcher");
+
+            String staticMethodName = Optional.ofNullable(getAnnotationValue(mirror, "staticMethodName"))
+                    .map(AnnotationValue::getValue)
+                    .map(v -> (String) v)
+                    .orElse(pojoClassName.substring(0, 1).toLowerCase() + pojoClassName.substring(1));
 
             boolean skipObjectMethods = Optional.ofNullable(getAnnotationValue(mirror, "skipObjectMethods"))
                     .map(AnnotationValue::getValue)
@@ -178,7 +185,7 @@ public class BuildMatcherProcessor extends AbstractProcessor {
             List<String> utilities = qualifiedNames(getAnnotationValue(mirror, "utilities"));
 
             BuildMatcherData settings = new BuildMatcherData(
-                    pojoElement, destinationPackage, destinationName, skipObjectMethods, utilities);
+                    pojoElement, destinationPackage, destinationName, staticMethodName, skipObjectMethods, utilities);
             BuildMatcherData previous = candidates.get(fullDestination);
             if (previous != null && !settings.pojoElement.equals(previous.pojoElement)) {
                 throw Exceptions.formatMessage(
@@ -273,6 +280,7 @@ public class BuildMatcherProcessor extends AbstractProcessor {
         private final String destinationPackage;
         private final String destinationName;
         private final TypeElement pojoElement;
+        private final String staticMethodName;
         private final boolean skipObjectMethods;
         private final Set<String> utilities = new HashSet<>();
 
@@ -280,11 +288,13 @@ public class BuildMatcherProcessor extends AbstractProcessor {
                 TypeElement pojoElement,
                 String destinationPackage,
                 String destinationName,
+                String staticMethodName,
                 boolean skipObjectMethods,
                 Collection<String> utilities) {
             this.pojoElement = pojoElement;
             this.destinationPackage = destinationPackage;
             this.destinationName = destinationName;
+            this.staticMethodName = staticMethodName;
             this.skipObjectMethods = skipObjectMethods;
             addUtilities(utilities);
         }

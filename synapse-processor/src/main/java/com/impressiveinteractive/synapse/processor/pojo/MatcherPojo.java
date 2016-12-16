@@ -21,13 +21,20 @@ public class MatcherPojo implements ImportHolder {
     private final String pojoName;
     private final String destinationPackage;
     private final String destinationName;
+    private final String staticMethodName;
     private final List<WithGetterLikePojo> getterLikes = new ArrayList<>();
     private final List<WithUtilityPojo> utilities = new ArrayList<>();
 
-    public MatcherPojo(String pojoCanonicalName, String pojoName, String destinationPackage, String destinationName) {
+    public MatcherPojo(
+            String pojoCanonicalName,
+            String pojoName,
+            String destinationPackage,
+            String destinationName,
+            String staticMethodName) {
         this.pojoName = pojoName;
         this.destinationPackage = destinationPackage;
         this.destinationName = destinationName;
+        this.staticMethodName = staticMethodName;
 
         imports.add(Generated.class.getCanonicalName());
         imports.add(SerializableFunction.class.getCanonicalName());
@@ -62,6 +69,10 @@ public class MatcherPojo implements ImportHolder {
 
     public String getDestinationName() {
         return destinationName;
+    }
+
+    public String getStaticMethodName() {
+        return staticMethodName;
     }
 
     public String getPropertyName() {
