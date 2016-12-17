@@ -10,7 +10,7 @@ public final class Methods {
         throw new AssertionError("Illegal private constructor call.");
     }
 
-    public static List<String> getWithMethodNames(Class<?> cls) {
+    public static List<String> methodNames(Class<?> cls) {
         return Arrays.stream(cls.getMethods())
                 .map(Method::getName)
                 .filter(name -> name.startsWith("with"))

@@ -2,6 +2,7 @@ package com.impressiveinteractive.synapse.processor;
 
 import com.impressiveinteractive.synapse.exception.Exceptions;
 import com.impressiveinteractive.synapse.processor.generator.MatcherGenerator;
+import com.impressiveinteractive.synapse.processor.pojo.GenericPojo;
 import com.impressiveinteractive.synapse.processor.pojo.MatcherPojo;
 import com.impressiveinteractive.synapse.processor.pojo.WithGetterLikePojo;
 import com.impressiveinteractive.synapse.processor.pojo.WithUtilityPojo;
@@ -20,8 +21,10 @@ import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.TypeParameterElement;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
+import javax.lang.model.type.TypeVariable;
 import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
 import java.io.IOException;
@@ -34,6 +37,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toList;
 
@@ -77,12 +81,7 @@ public class BuildMatcherProcessor extends AbstractProcessor {
         TypeElement objectElement = processingEnv.getElementUtils().getTypeElement(Object.class.getCanonicalName());
         for (BuildMatcherData settings : dataByDestination.values()) {
             TypeElement destinationElement = settings.pojoElement;
-            MatcherPojo matcherPojo = new MatcherPojo(
-                    destinationElement.getQualifiedName().toString(),
-                    ClassNameUtility.extractClass(destinationElement.getQualifiedName().toString()),
-                    settings.destinationPackage,
-                    settings.destinationName,
-                    settings.staticMethodName);
+            MatcherPojo matcherPojo = settings.matcherPojo;
 
             processingEnv.getElementUtils().getAllMembers(destinationElement).stream()
                     .filter(enclosed -> enclosed instanceof ExecutableElement)
@@ -99,12 +98,17 @@ public class BuildMatcherProcessor extends AbstractProcessor {
                         String simplifiedName = executableElement.getSimpleName().toString()
                                 .replaceAll("^(get|is)([A-Z].*$)", "$2");
 
+                        List<GenericPojo> generics = executableElement.getTypeParameters().stream()
+                                .map(TypeParameterElement::asType)
+                                .map(type -> (TypeVariable) type)
+                                .map(this::toGenericPojo)
+                                .collect(Collectors.toList());
+
                         matcherPojo.addGetterLike(new WithGetterLikePojo(
-                                matcherPojo.getPojoName(),
-                                matcherPojo.getDestinationName(),
                                 executableElement.getSimpleName().toString(),
+                                generics,
                                 simplifiedName.substring(0, 1).toUpperCase() + simplifiedName.substring(1),
-                                returnType));
+                                returnType, !executableElement.getThrownTypes().isEmpty()));
                     });
 
             for (String utility : settings.utilities) {
@@ -124,8 +128,6 @@ public class BuildMatcherProcessor extends AbstractProcessor {
 
                             String methodName = executableElement.getSimpleName().toString();
                             matcherPojo.addUtility(new WithUtilityPojo(
-                                    matcherPojo.getPojoName(),
-                                    matcherPojo.getDestinationName(),
                                     utilityElement.getQualifiedName().toString(),
                                     methodName,
                                     methodName.substring(0, 1).toUpperCase() + methodName.substring(1),
@@ -135,8 +137,8 @@ public class BuildMatcherProcessor extends AbstractProcessor {
 
             try {
                 Filer filer = processingEnv.getFiler();
-                JavaFileObject sourceFile =
-                        filer.createSourceFile(settings.destinationPackage + "." + settings.destinationName);
+                JavaFileObject sourceFile = filer.createSourceFile(
+                        matcherPojo.getDestinationPackage() + "." + matcherPojo.getDestinationName());
                 try (Writer writer = sourceFile.openWriter()) {
                     writer.write(MatcherGenerator.generateSourceCode(matcherPojo));
                 }
@@ -162,16 +164,17 @@ public class BuildMatcherProcessor extends AbstractProcessor {
                     .map(v -> (String) v)
                     .orElse(ClassNameUtility.extractPackage(qualifiedClassName));
 
+            String pojoSimpleName = pojo.getSimpleName().toString();
             String pojoClassName = ClassNameUtility.extractClass(qualifiedClassName);
             String destinationName = Optional.ofNullable(getAnnotationValue(mirror, "destinationName"))
                     .map(AnnotationValue::getValue)
                     .map(v -> (String) v)
-                    .orElse(pojoClassName + "Matcher");
+                    .orElse(pojoSimpleName + "Matcher");
 
             String staticMethodName = Optional.ofNullable(getAnnotationValue(mirror, "staticMethodName"))
                     .map(AnnotationValue::getValue)
                     .map(v -> (String) v)
-                    .orElse(pojoClassName.substring(0, 1).toLowerCase() + pojoClassName.substring(1));
+                    .orElse(pojoSimpleName.substring(0, 1).toLowerCase() + pojoSimpleName.substring(1));
 
             boolean skipObjectMethods = Optional.ofNullable(getAnnotationValue(mirror, "skipObjectMethods"))
                     .map(AnnotationValue::getValue)
@@ -184,8 +187,15 @@ public class BuildMatcherProcessor extends AbstractProcessor {
 
             List<String> utilities = qualifiedNames(getAnnotationValue(mirror, "utilities"));
 
-            BuildMatcherData settings = new BuildMatcherData(
-                    pojoElement, destinationPackage, destinationName, staticMethodName, skipObjectMethods, utilities);
+            List<GenericPojo> generics = pojoElement.getTypeParameters().stream()
+                    .map(TypeParameterElement::asType)
+                    .map(type -> (TypeVariable) type)
+                    .map(this::toGenericPojo)
+                    .collect(Collectors.toList());
+
+            MatcherPojo matcherPojo = new MatcherPojo(qualifiedClassName, pojoSimpleName, generics,
+                    destinationPackage, destinationName, staticMethodName);
+            BuildMatcherData settings = new BuildMatcherData(pojoElement, matcherPojo, skipObjectMethods, utilities);
             BuildMatcherData previous = candidates.get(fullDestination);
             if (previous != null && !settings.pojoElement.equals(previous.pojoElement)) {
                 throw Exceptions.formatMessage(
@@ -198,6 +208,25 @@ public class BuildMatcherProcessor extends AbstractProcessor {
         } catch (ProcessingException e) {
             processingEnv.getMessager().printMessage(e.getKind(), e.getMessage(), element);
         }
+    }
+
+    private GenericPojo toGenericPojo(TypeVariable typeVar) {
+        String name = typeVar.toString();
+        TypeMirror upperBound = typeVar.getUpperBound();
+
+        String upperBoundName = null;
+        String upperBoundType = null;
+        Element element = processingEnv.getTypeUtils().asElement(upperBound);
+        if (element instanceof TypeElement){
+            TypeElement typeElement = (TypeElement) element;
+            if(!typeElement.getQualifiedName().toString().equals(Object.class.getCanonicalName())) {
+                upperBoundName = typeElement.getSimpleName().toString();
+                upperBoundType = typeElement.getQualifiedName().toString();
+            }
+        }else{
+            upperBoundName = upperBound.toString();
+        }
+        return new GenericPojo(name, upperBoundName, upperBoundType);
     }
 
     private String getReturnTypeAsString(ExecutableElement executableElement) {
@@ -277,24 +306,18 @@ public class BuildMatcherProcessor extends AbstractProcessor {
     }
 
     private static class BuildMatcherData {
-        private final String destinationPackage;
-        private final String destinationName;
+        private final MatcherPojo matcherPojo;
         private final TypeElement pojoElement;
-        private final String staticMethodName;
         private final boolean skipObjectMethods;
         private final Set<String> utilities = new HashSet<>();
 
         private BuildMatcherData(
                 TypeElement pojoElement,
-                String destinationPackage,
-                String destinationName,
-                String staticMethodName,
+                MatcherPojo matcherPojo,
                 boolean skipObjectMethods,
                 Collection<String> utilities) {
+            this.matcherPojo = matcherPojo;
             this.pojoElement = pojoElement;
-            this.destinationPackage = destinationPackage;
-            this.destinationName = destinationName;
-            this.staticMethodName = staticMethodName;
             this.skipObjectMethods = skipObjectMethods;
             addUtilities(utilities);
         }

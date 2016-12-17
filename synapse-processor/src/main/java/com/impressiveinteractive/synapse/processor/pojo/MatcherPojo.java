@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
 
@@ -19,6 +20,7 @@ public class MatcherPojo implements ImportHolder {
     private final Set<String> imports = new TreeSet<>();
 
     private final String pojoName;
+    private final List<GenericPojo> generics;
     private final String destinationPackage;
     private final String destinationName;
     private final String staticMethodName;
@@ -28,10 +30,12 @@ public class MatcherPojo implements ImportHolder {
     public MatcherPojo(
             String pojoCanonicalName,
             String pojoName,
+            List<GenericPojo> generics,
             String destinationPackage,
             String destinationName,
             String staticMethodName) {
         this.pojoName = pojoName;
+        this.generics = generics;
         this.destinationPackage = destinationPackage;
         this.destinationName = destinationName;
         this.staticMethodName = staticMethodName;
@@ -40,6 +44,10 @@ public class MatcherPojo implements ImportHolder {
         imports.add(SerializableFunction.class.getCanonicalName());
         imports.add(pojoCanonicalName);
         imports.add(ChainableMatcher.class.getCanonicalName());
+        if (!generics.isEmpty()) {
+            imports.add("com.google.common.reflect.TypeToken");
+            generics.forEach(generic -> imports.addAll(generic.getImports()));
+        }
     }
 
     public void addGetterLike(WithGetterLikePojo pojo) {
@@ -69,6 +77,20 @@ public class MatcherPojo implements ImportHolder {
 
     public String getDestinationName() {
         return destinationName;
+    }
+
+    public String getTypedGenerics() {
+        return generics.isEmpty() ? null
+                : "<" + generics.stream()
+                .map(GenericPojo::getFullName)
+                .collect(Collectors.joining(", ")) + ">";
+    }
+
+    public String getGenerics() {
+        return generics.isEmpty() ? null
+                : "<" + generics.stream()
+                .map(GenericPojo::getName)
+                .collect(Collectors.joining(", ")) + ">";
     }
 
     public String getStaticMethodName() {
