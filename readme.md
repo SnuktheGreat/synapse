@@ -6,6 +6,7 @@ Synapse is a library that provides some easy to use utilities for Java 8. It is 
 - [synapse-test](#synapse-test): Provides testing utility classes and Hamcrest matchers.
 
 On the bottom of this document you can find the following additional information:
+- [Credit](#credit)
 - [Contributing](#contributing)
 - [License](#license)
 
@@ -402,12 +403,17 @@ Expected: of type People with list.get(0).firstName is "James"
 		expecting with list.get(0).firstName is "James"
 ```
 
+## Credit
+
+- [Jethro Borsje](https://github.com/jethroborsje) - For suggesting to make this code open source;
+- [TimeSeries](http://www.timeseries.nl/) - Official testing ground (thanks guys!)
+
 ## Contributing
 
 All contributions to Synapse are welcomed! Please submit your bug reports, suggestions and or questions to
 [Issues](https://github.com/SnuktheGreat/synapse/issues). Code is contributed via pull requests and reviewed by the
 core team. Code contributions should fit Synapse's intentions and codestyle and should be properly documented (JavaDoc)
-and unit tested. It is recommended you create an issue accompanying any pull request.
+and unit tested. It is recommended that you create an issue accompanying any pull request.
 
 Contributors to Synapse are asked to waive all copyright and related or neighbouring rights to comply with the CC0
 license.
