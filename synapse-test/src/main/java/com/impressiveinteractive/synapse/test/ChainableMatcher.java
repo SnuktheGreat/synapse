@@ -1,7 +1,7 @@
 package com.impressiveinteractive.synapse.test;
 
-import com.google.common.reflect.TypeToken;
 import com.impressiveinteractive.synapse.lambda.SerializableFunction;
+import com.impressiveinteractive.synapse.reflect.Typed;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
@@ -38,7 +38,7 @@ public class ChainableMatcher<T> extends BaseMatcher<T> {
     private static final String LAMBDA_NAME = "<lambda>";
 
     private final List<FieldMatcher<?>> fieldMatchers = new ArrayList<>();
-    private final TypeToken<T> type;
+    private final Typed<T> type;
 
     /**
      * Create a new {@link ChainableMatcher} for the given type.
@@ -58,7 +58,7 @@ public class ChainableMatcher<T> extends BaseMatcher<T> {
      * @param <T>  The type of the object being matched.
      * @return A new {@link ChainableMatcher} for the given type.
      */
-    public static <T> ChainableMatcher<T> ofType(TypeToken<T> type) {
+    public static <T> ChainableMatcher<T> ofType(Typed<T> type) {
         return new ChainableMatcher<>(type);
     }
 
@@ -170,7 +170,7 @@ public class ChainableMatcher<T> extends BaseMatcher<T> {
      * @param cls The given (simple) type.
      */
     public ChainableMatcher(Class<T> cls) {
-        this(TypeToken.of(cls));
+        this(Typed.of(cls));
     }
 
     /**
@@ -178,7 +178,7 @@ public class ChainableMatcher<T> extends BaseMatcher<T> {
      *
      * @param type The given type.
      */
-    public ChainableMatcher(TypeToken<T> type) {
+    public ChainableMatcher(Typed<T> type) {
         this.type = type;
     }
 
