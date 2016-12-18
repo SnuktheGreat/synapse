@@ -21,19 +21,19 @@ public class <matcher.destinationName><matcher.typedGenerics> extends ChainableM
     }
 
     @Override
-    public \<CM_V\> <matcher.destinationName><matcher.generics> where(SerializableFunction\<? super <matcher.pojoName><matcher.generics>, CM_V\> valueExtractor, Matcher\<? super CM_V\> matcher) {
+    public \<CM_V\> <matcher.destinationName><matcher.generics> where(SerializableFunction\<<matcher.pojoName><matcher.generics>, CM_V\> valueExtractor, Matcher\<? super CM_V\> matcher) {
         super.where(valueExtractor, matcher);
         return this;
     }
 
     @Override
-    public \<CM_V\> <matcher.destinationName><matcher.generics> where(String description, SerializableFunction\<? super <matcher.pojoName><matcher.generics>, CM_V\> valueExtractor, Matcher\<? super CM_V\> matcher) {
+    public \<CM_V\> <matcher.destinationName><matcher.generics> where(String description, SerializableFunction\<<matcher.pojoName><matcher.generics>, CM_V\> valueExtractor, Matcher\<? super CM_V\> matcher) {
         super.where(description, valueExtractor, matcher);
         return this;
     }
 
     @Override
-    public \<CM_V1, CM_V2\> <matcher.destinationName><matcher.generics> where(FieldMapper\<? super <matcher.pojoName><matcher.generics>, CM_V1, CM_V2\> mapper, Matcher\<? super CM_V2\> matcher) {
+    public \<CM_V1, CM_V2\> <matcher.destinationName><matcher.generics> where(FieldMapper\<<matcher.pojoName><matcher.generics>, CM_V1, CM_V2\> mapper, Matcher\<? super CM_V2\> matcher) {
         super.where(mapper, matcher);
         return this;
     }

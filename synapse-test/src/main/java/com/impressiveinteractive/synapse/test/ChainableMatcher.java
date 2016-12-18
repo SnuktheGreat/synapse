@@ -236,7 +236,7 @@ public class ChainableMatcher<T> extends BaseMatcher<T> {
      * @param <V>            The value type for the described field.
      * @return This {@link ChainableMatcher} for further chaining.
      */
-    public <V> ChainableMatcher<T> where(SerializableFunction<? super T, V> valueExtractor, Matcher<? super V> matcher) {
+    public <V> ChainableMatcher<T> where(SerializableFunction<T, V> valueExtractor, Matcher<? super V> matcher) {
         requireNonNull(valueExtractor);
         return where(describe(valueExtractor), valueExtractor, matcher);
     }
@@ -252,9 +252,9 @@ public class ChainableMatcher<T> extends BaseMatcher<T> {
      * @param <V>            The value type for the described field.
      * @return This {@link ChainableMatcher} for further chaining.
      */
-    public <V> ChainableMatcher<T> where(String description, SerializableFunction<? super T, V> valueExtractor, Matcher<? super V> matcher) {
-        Field<? super T, V> field = new Field<>(requireNonNull(valueExtractor), description);
-        FieldMapper<? super T, V, V> mapper = new FieldMapper<>(field);
+    public <V> ChainableMatcher<T> where(String description, SerializableFunction<T, V> valueExtractor, Matcher<? super V> matcher) {
+        Field<T, V> field = new Field<>(requireNonNull(valueExtractor), description);
+        FieldMapper<T, V, V> mapper = new FieldMapper<>(field);
         return where(mapper, matcher);
     }
 
@@ -269,9 +269,9 @@ public class ChainableMatcher<T> extends BaseMatcher<T> {
      * @see #map(SerializableFunction)
      * @see #map(String, SerializableFunction)
      */
-    public <V1, V2> ChainableMatcher<T> where(FieldMapper<? super T, V1, V2> mapper, Matcher<? super V2> matcher) {
+    public <V1, V2> ChainableMatcher<T> where(FieldMapper<T, V1, V2> mapper, Matcher<? super V2> matcher) {
         fieldMatchers.add(new FieldMatcher<>(requireNonNull(mapper), requireNonNull(matcher)));
-        return this;
+        return ChainableMatcher.this;
     }
 
     private String describeMismatch(String fieldName, Object fieldValue, FieldMatcher<?> subMatcher) {
@@ -386,10 +386,10 @@ public class ChainableMatcher<T> extends BaseMatcher<T> {
 
     private final class FieldMatcher<V> implements SelfDescribing {
 
-        private final FieldMapper<? super T, ?, V> mapper;
+        private final FieldMapper<T, ?, V> mapper;
         private final Matcher<? super V> matcher;
 
-        private FieldMatcher(FieldMapper<? super T, ?, V> mapper, Matcher<? super V> matcher) {
+        private FieldMatcher(FieldMapper<T, ?, V> mapper, Matcher<? super V> matcher) {
             this.mapper = mapper;
             this.matcher = matcher;
         }
