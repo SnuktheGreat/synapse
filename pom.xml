@@ -4,7 +4,7 @@
 
     <groupId>com.impressiveinteractive.synapse</groupId>
     <artifactId>synapse</artifactId>
-    <version>0.9.1-SNAPSHOT</version>
+    <version>0.9.1</version>
     <packaging>pom</packaging>
 
     <name>Synapse</name>
@@ -24,7 +24,7 @@
         <connection>scm:git:git://github.com/SnuktheGreat/synapse.git</connection>
         <developerConnection>scm:git:git@github.com:SnuktheGreat/synapse.git</developerConnection>
         <url>https://github.com/SnuktheGreat/synapse</url>
-        <tag>HEAD</tag>
+        <tag>synapse-0.9.1</tag>
     </scm>
 
     <distributionManagement>
