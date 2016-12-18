@@ -7,7 +7,7 @@
     <version>0.9.1-SNAPSHOT</version>
     <packaging>pom</packaging>
 
-    <name>Synpase</name>
+    <name>Synapse</name>
     <description>Synapse is a library that provides some easy to use utilities for Java 8.</description>
     <url>https://github.com/SnuktheGreat/synapse</url>
 
