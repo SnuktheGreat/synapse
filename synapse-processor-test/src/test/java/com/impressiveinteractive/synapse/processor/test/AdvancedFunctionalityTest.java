@@ -1,6 +1,5 @@
 package com.impressiveinteractive.synapse.processor.test;
 
-import com.google.common.collect.ImmutableMap;
 import com.impressiveinteractive.synapse.processor.BuildMatcher;
 import com.impressiveinteractive.synapse.processor.BuildMatchers;
 import com.impressiveinteractive.synapse.processor.matchers.ClassMatcher;
@@ -16,6 +15,7 @@ import com.impressiveinteractive.synapse.processor.test.vehicle.Vehicle;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import static com.impressiveinteractive.synapse.processor.matchers.MotorVehicleMatcher.motorVehicle;
@@ -99,10 +99,10 @@ public class AdvancedFunctionalityTest {
 
     @Test
     public void testMap() throws Exception {
-        Map<Integer, String> map = ImmutableMap.of(
-                1, "One",
-                2, "Two",
-                3, "Three");
+        Map<Integer, String> map = new HashMap<>();
+        map.put(1, "One");
+        map.put(2, "Two");
+        map.put(3, "Three");
 
         assertThat(map, is(MapMatcher.<Integer, String>map()
                 .withEmpty(is(false))

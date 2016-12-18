@@ -15,7 +15,7 @@ public class <matcher.destinationName><matcher.typedGenerics> extends ChainableM
     }
 
     public <matcher.destinationName>() {
-        <if(matcher.generics)>super(new TypeToken\<<matcher.pojoName><matcher.generics>\>() {});
+        <if(matcher.generics)>super(new Typed\<<matcher.pojoName><matcher.generics>\>() {});
         <else>super(<matcher.pojoName>.class);
         <endif>
     }

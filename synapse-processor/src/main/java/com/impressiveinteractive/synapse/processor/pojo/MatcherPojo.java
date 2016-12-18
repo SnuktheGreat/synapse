@@ -1,6 +1,7 @@
 package com.impressiveinteractive.synapse.processor.pojo;
 
 import com.impressiveinteractive.synapse.lambda.SerializableFunction;
+import com.impressiveinteractive.synapse.reflect.Typed;
 import com.impressiveinteractive.synapse.test.ChainableMatcher;
 
 import javax.annotation.Generated;
@@ -45,7 +46,7 @@ public class MatcherPojo implements ImportHolder {
         imports.add(pojoCanonicalName);
         imports.add(ChainableMatcher.class.getCanonicalName());
         if (!generics.isEmpty()) {
-            imports.add("com.google.common.reflect.TypeToken");
+            imports.add(Typed.class.getCanonicalName());
             generics.forEach(generic -> imports.addAll(generic.getImports()));
         }
     }
