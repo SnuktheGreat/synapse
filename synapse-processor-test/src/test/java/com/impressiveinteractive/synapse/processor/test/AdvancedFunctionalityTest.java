@@ -6,6 +6,7 @@ import com.impressiveinteractive.synapse.processor.BuildMatchers;
 import com.impressiveinteractive.synapse.processor.matchers.ClassMatcher;
 import com.impressiveinteractive.synapse.processor.matchers.MapMatcher;
 import com.impressiveinteractive.synapse.processor.matchers.MotorVehicleMatcher;
+import com.impressiveinteractive.synapse.processor.matchers.ThingyMatcher;
 import com.impressiveinteractive.synapse.processor.matchers.VehicleCarMatcher;
 import com.impressiveinteractive.synapse.processor.matchers.VehicleMatcher;
 import com.impressiveinteractive.synapse.processor.test.vehicle.Car;
@@ -29,20 +30,20 @@ import static org.junit.Assert.assertThat;
         @BuildMatcher(
                 pojo = Vehicle.class,
                 destinationPackage = "com.impressiveinteractive.synapse.processor.matchers",
-                skipObjectMethods = true),
+                includeObjectMethods = false),
         @BuildMatcher(
                 pojo = MotorVehicle.class,
                 destinationPackage = "com.impressiveinteractive.synapse.processor.matchers",
-                skipObjectMethods = true),
+                includeObjectMethods = false),
         @BuildMatcher(
                 pojo = Car.class,
                 destinationPackage = "com.impressiveinteractive.synapse.processor.matchers",
                 destinationName = "VehicleCarMatcher",
-                skipObjectMethods = true),
+                includeObjectMethods = false),
         @BuildMatcher(
                 pojo = ParkingLot.class,
                 destinationPackage = "com.impressiveinteractive.synapse.processor.matchers",
-                skipObjectMethods = true),
+                includeObjectMethods = false),
         @BuildMatcher(
                 pojo = Class.class,
                 destinationPackage = "com.impressiveinteractive.synapse.processor.matchers",
@@ -53,7 +54,11 @@ import static org.junit.Assert.assertThat;
                 destinationPackage = "com.impressiveinteractive.synapse.processor.matchers"),
         @BuildMatcher(
                 pojo = AdvancedFunctionalityTest.Thingy.class,
-                destinationPackage = "com.impressiveinteractive.synapse.processor.matchers")})
+                destinationPackage = "com.impressiveinteractive.synapse.processor.matchers"),
+        @BuildMatcher(
+                pojo = AdvancedFunctionalityTest.NameCollision.class,
+                destinationPackage = "com.impressiveinteractive.synapse.processor.matchers",
+                shortenGetterNames = false)})
 public class AdvancedFunctionalityTest {
 
     private Car car;
@@ -105,7 +110,17 @@ public class AdvancedFunctionalityTest {
     }
 
     @Test
-    public void skipObjectMethods() throws Exception {
+    public void includeObjectMethods() throws Exception {
+        // @BuildMatcher(includeObjectMethods = true) - The default
+        assertThat(ThingyMatcher.class, is(thingyMatcherClass()
+                .withMethodNames(containsInAnyOrder(
+                        "withGet",
+                        "withVehicle",
+                        "withClass",
+                        "withToString", // Adds both toString and hashCode
+                        "withHashCode"))));
+
+        // @BuildMatcher(includeObjectMethods = false)
         assertThat(VehicleMatcher.class, is(vehicleMatcherClass()
                 .withMethodNames(containsInAnyOrder(
                         "withPropulsion",
@@ -113,6 +128,7 @@ public class AdvancedFunctionalityTest {
                         // No methods from Object because of BuildMatcher.skipObjects = true
                 ))));
 
+        // @BuildMatcher(includeObjectMethods = false)
         assertThat(MotorVehicleMatcher.class, is(motorVehicleMatcherClass()
                 .withMethodNames(containsInAnyOrder(
                         "withPropulsion",
@@ -120,6 +136,7 @@ public class AdvancedFunctionalityTest {
                         "withFuel",
                         "withToString")))); // Only adds toString because VehicleMatcher overrides it
 
+        // @BuildMatcher(includeObjectMethods = false)
         assertThat(VehicleCarMatcher.class, is(vehicleCarMatcherClass()
                 .withMethodNames(containsInAnyOrder(
                         "withPropulsion",
@@ -139,6 +156,15 @@ public class AdvancedFunctionalityTest {
         <T extends Vehicle> T getVehicle();
     }
 
+    /**
+     * Used to demonstrate {@link BuildMatcher#shortenGetterNames()} set to false.
+     */
+    public interface NameCollision {
+        Vehicle vehicle();
+
+        Vehicle getVehicle();
+    }
+
     /*
      * Methods below are used to avoid having to do this: ClassMatcher.<VehicleMatcher>cls()
      */
@@ -152,6 +178,10 @@ public class AdvancedFunctionalityTest {
     }
 
     private ClassMatcher<VehicleCarMatcher> vehicleCarMatcherClass() {
+        return ClassMatcher.cls();
+    }
+
+    private ClassMatcher<ThingyMatcher> thingyMatcherClass() {
         return ClassMatcher.cls();
     }
 }

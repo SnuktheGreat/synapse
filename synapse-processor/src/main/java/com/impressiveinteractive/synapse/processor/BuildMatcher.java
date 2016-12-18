@@ -50,7 +50,12 @@ public @interface BuildMatcher {
     Class<?>[] utilities() default {};
 
     /**
-     * @return Whether to skip methods in {@link Object}. Overridden methods are always added.
+     * @return Whether to drop "get" and "is" from with* methods. Can be turned of in case of collisions.
      */
-    boolean skipObjectMethods() default false;
+    boolean shortenGetterNames() default true;
+
+    /**
+     * @return Whether to include the methods specified in {@link Object}. Overridden methods are always added.
+     */
+    boolean includeObjectMethods() default true;
 }
