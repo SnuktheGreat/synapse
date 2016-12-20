@@ -58,7 +58,6 @@
         <module>synapse-core</module>
         <module>synapse-test</module>
         <module>synapse-processor</module>
-        <module>synapse-processor-test</module>
     </modules>
 
     <properties>

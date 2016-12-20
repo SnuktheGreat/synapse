@@ -2,25 +2,26 @@ package com.impressiveinteractive.synapse.processor.test;
 
 import com.impressiveinteractive.synapse.processor.BuildMatcher;
 import com.impressiveinteractive.synapse.processor.BuildMatchers;
-import com.impressiveinteractive.synapse.processor.matchers.ClassMatcher;
-import com.impressiveinteractive.synapse.processor.matchers.MapMatcher;
-import com.impressiveinteractive.synapse.processor.matchers.MotorVehicleMatcher;
-import com.impressiveinteractive.synapse.processor.matchers.ThingyMatcher;
-import com.impressiveinteractive.synapse.processor.matchers.VehicleCarMatcher;
-import com.impressiveinteractive.synapse.processor.matchers.VehicleMatcher;
+import com.impressiveinteractive.synapse.processor.matchers.test.ClassMatcher;
+import com.impressiveinteractive.synapse.processor.matchers.test.MapMatcher;
+import com.impressiveinteractive.synapse.processor.matchers.test.MotorVehicleMatcher;
+import com.impressiveinteractive.synapse.processor.matchers.test.ThingyMatcher;
+import com.impressiveinteractive.synapse.processor.matchers.test.VehicleCarMatcher;
+import com.impressiveinteractive.synapse.processor.matchers.test.VehicleMatcher;
 import com.impressiveinteractive.synapse.processor.test.vehicle.Car;
 import com.impressiveinteractive.synapse.processor.test.vehicle.MotorVehicle;
 import com.impressiveinteractive.synapse.processor.test.vehicle.ParkingLot;
 import com.impressiveinteractive.synapse.processor.test.vehicle.Vehicle;
+import org.hamcrest.Matchers;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.impressiveinteractive.synapse.processor.matchers.MotorVehicleMatcher.motorVehicle;
-import static com.impressiveinteractive.synapse.processor.matchers.VehicleCarMatcher.car;
-import static com.impressiveinteractive.synapse.processor.matchers.VehicleMatcher.vehicle;
+import static com.impressiveinteractive.synapse.processor.matchers.test.MotorVehicleMatcher.motorVehicle;
+import static com.impressiveinteractive.synapse.processor.matchers.test.VehicleCarMatcher.car;
+import static com.impressiveinteractive.synapse.processor.matchers.test.VehicleMatcher.vehicle;
 import static com.impressiveinteractive.synapse.processor.test.vehicle.MotorVehicle.Fuel.PETROL;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.is;
@@ -29,35 +30,35 @@ import static org.junit.Assert.assertThat;
 @BuildMatchers({
         @BuildMatcher(
                 pojo = Vehicle.class,
-                destinationPackage = "com.impressiveinteractive.synapse.processor.matchers",
+                destinationPackage = "com.impressiveinteractive.synapse.processor.matchers.test",
                 includeObjectMethods = false),
         @BuildMatcher(
                 pojo = MotorVehicle.class,
-                destinationPackage = "com.impressiveinteractive.synapse.processor.matchers",
+                destinationPackage = "com.impressiveinteractive.synapse.processor.matchers.test",
                 includeObjectMethods = false),
         @BuildMatcher(
                 pojo = Car.class,
-                destinationPackage = "com.impressiveinteractive.synapse.processor.matchers",
+                destinationPackage = "com.impressiveinteractive.synapse.processor.matchers.test",
                 destinationName = "VehicleCarMatcher",
                 includeObjectMethods = false),
         @BuildMatcher(
                 pojo = ParkingLot.class,
-                destinationPackage = "com.impressiveinteractive.synapse.processor.matchers",
+                destinationPackage = "com.impressiveinteractive.synapse.processor.matchers.test",
                 includeObjectMethods = false),
         @BuildMatcher(
                 pojo = Class.class,
-                destinationPackage = "com.impressiveinteractive.synapse.processor.matchers",
+                destinationPackage = "com.impressiveinteractive.synapse.processor.matchers.test",
                 utilities = Methods.class,
                 staticMethodName = "cls"),
         @BuildMatcher(
                 pojo = Map.class,
-                destinationPackage = "com.impressiveinteractive.synapse.processor.matchers"),
+                destinationPackage = "com.impressiveinteractive.synapse.processor.matchers.test"),
         @BuildMatcher(
                 pojo = AdvancedFunctionalityTest.Thingy.class,
-                destinationPackage = "com.impressiveinteractive.synapse.processor.matchers"),
+                destinationPackage = "com.impressiveinteractive.synapse.processor.matchers.test"),
         @BuildMatcher(
                 pojo = AdvancedFunctionalityTest.NameCollision.class,
-                destinationPackage = "com.impressiveinteractive.synapse.processor.matchers",
+                destinationPackage = "com.impressiveinteractive.synapse.processor.matchers.test",
                 shortenGetterNames = false)})
 public class AdvancedFunctionalityTest {
 
@@ -75,14 +76,14 @@ public class AdvancedFunctionalityTest {
 
     @Test
     public void testInterfaceVehicle() throws Exception {
-        assertThat(car, is(vehicle()
+        assertThat(car, Matchers.is(VehicleMatcher.vehicle()
                 .withPropulsion(is("straight six " + PETROL.getPropulsion()))
                 .withMaxSpeed(is(9000.0))));
     }
 
     @Test
     public void testAbstractClassMotorVehicle() throws Exception {
-        assertThat(car, is(motorVehicle()
+        assertThat(car, Matchers.is(MotorVehicleMatcher.motorVehicle()
                 .withPropulsion(is("straight six " + PETROL.getPropulsion()))
                 .withMaxSpeed(is(9000.0))
                 .withFuel(is(PETROL))));
@@ -90,7 +91,7 @@ public class AdvancedFunctionalityTest {
 
     @Test
     public void testConcreteClassCar() throws Exception {
-        assertThat(car, is(car()
+        assertThat(car, Matchers.is(VehicleCarMatcher.car()
                 .withPropulsion(is("straight six " + PETROL.getPropulsion()))
                 .withMaxSpeed(is(9000.0))
                 .withFuel(is(PETROL))
@@ -104,7 +105,7 @@ public class AdvancedFunctionalityTest {
         map.put(2, "Two");
         map.put(3, "Three");
 
-        assertThat(map, is(MapMatcher.<Integer, String>map()
+        assertThat(map, Matchers.is(MapMatcher.<Integer, String>map()
                 .withEmpty(is(false))
                 .withSize(is(3))));
     }
@@ -112,7 +113,7 @@ public class AdvancedFunctionalityTest {
     @Test
     public void includeObjectMethods() throws Exception {
         // @BuildMatcher(includeObjectMethods = true) - The default
-        assertThat(ThingyMatcher.class, is(thingyMatcherClass()
+        assertThat(ThingyMatcher.class, Matchers.is(thingyMatcherClass()
                 .withMethodNames(containsInAnyOrder(
                         "withGet",
                         "withVehicle",
@@ -121,7 +122,7 @@ public class AdvancedFunctionalityTest {
                         "withHashCode"))));
 
         // @BuildMatcher(includeObjectMethods = false)
-        assertThat(VehicleMatcher.class, is(vehicleMatcherClass()
+        assertThat(VehicleMatcher.class, Matchers.is(vehicleMatcherClass()
                 .withMethodNames(containsInAnyOrder(
                         "withPropulsion",
                         "withMaxSpeed"
@@ -129,7 +130,7 @@ public class AdvancedFunctionalityTest {
                 ))));
 
         // @BuildMatcher(includeObjectMethods = false)
-        assertThat(MotorVehicleMatcher.class, is(motorVehicleMatcherClass()
+        assertThat(MotorVehicleMatcher.class, Matchers.is(motorVehicleMatcherClass()
                 .withMethodNames(containsInAnyOrder(
                         "withPropulsion",
                         "withMaxSpeed",
@@ -137,7 +138,7 @@ public class AdvancedFunctionalityTest {
                         "withToString")))); // Only adds toString because VehicleMatcher overrides it
 
         // @BuildMatcher(includeObjectMethods = false)
-        assertThat(VehicleCarMatcher.class, is(vehicleCarMatcherClass()
+        assertThat(VehicleCarMatcher.class, Matchers.is(vehicleCarMatcherClass()
                 .withMethodNames(containsInAnyOrder(
                         "withPropulsion",
                         "withMaxSpeed",
