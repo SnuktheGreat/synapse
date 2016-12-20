@@ -38,6 +38,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toList;
 
@@ -71,11 +72,23 @@ public class BuildMatcherProcessor extends AbstractProcessor {
                 .forEach(element -> {
                     TypeElement typeElement = (TypeElement) element;
                     AnnotationMirror buildMatchers = getAnnotationMirror(typeElement, BuildMatchers.class);
-                    Optional.ofNullable(getAnnotationValue(buildMatchers, "value"))
+                    String defaultDestinationPackage =
+                            Optional.ofNullable(getAnnotationValue(buildMatchers, "defaultDestinationPackage"))
+                                    .map(AnnotationValue::getValue)
+                                    .map(v -> (String) v)
+                                    .orElse(null);
+
+                    Stream.of(
+                            Optional.ofNullable(getAnnotationValue(buildMatchers, "matchers")),
+                            Optional.ofNullable(getAnnotationValue(buildMatchers, "value")))
+                            .filter(Optional::isPresent)
+                            .map(Optional::get)
+                            .findFirst()
                             .map(AnnotationValue::getValue)
                             .map(value -> (List<AnnotationMirror>) value)
                             .orElse(Collections.emptyList())
-                            .forEach(child -> processBuildMatcherAnnotation(dataByDestination, typeElement, child));
+                            .forEach(child -> processBuildMatcherAnnotation(
+                                    dataByDestination, typeElement, child, defaultDestinationPackage));
                 });
 
         TypeElement objectElement = processingEnv.getElementUtils().getTypeElement(Object.class.getCanonicalName());
@@ -155,7 +168,17 @@ public class BuildMatcherProcessor extends AbstractProcessor {
     }
 
     private void processBuildMatcherAnnotation(
-            Map<String, BuildMatcherData> candidates, Element element, AnnotationMirror mirror) {
+            Map<String, BuildMatcherData> candidates,
+            Element element,
+            AnnotationMirror mirror) {
+        processBuildMatcherAnnotation(candidates, element, mirror, null);
+    }
+
+    private void processBuildMatcherAnnotation(
+            Map<String, BuildMatcherData> candidates,
+            Element element,
+            AnnotationMirror mirror,
+            String defaultDestinationPackage) {
         try {
             TypeElement pojo = Optional.ofNullable(getTypeElement(getAnnotationValue(mirror, "pojo")))
                     .orElse(getTypeElement(getAnnotationValue(mirror, "value")));
@@ -167,7 +190,8 @@ public class BuildMatcherProcessor extends AbstractProcessor {
             String destinationPackage = Optional.ofNullable(getAnnotationValue(mirror, "destinationPackage"))
                     .map(AnnotationValue::getValue)
                     .map(v -> (String) v)
-                    .orElse(ClassNameUtility.extractPackage(qualifiedClassName));
+                    .orElse(defaultDestinationPackage != null ? defaultDestinationPackage
+                            : ClassNameUtility.extractPackage(qualifiedClassName));
 
             String pojoSimpleName = pojo.getSimpleName().toString();
             String pojoClassName = ClassNameUtility.extractClass(qualifiedClassName);

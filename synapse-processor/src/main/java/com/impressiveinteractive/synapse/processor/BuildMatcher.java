@@ -28,7 +28,11 @@ public @interface BuildMatcher {
     Class<?> pojo() default Object.class;
 
     /**
-     * @return The package where the matcher will be generated into. Will use the {@link #pojo()} package on empty.
+     * Returns the package where the matcher will be generated into. On empty a default value will be used. This is
+     * either {@link BuildMatchers#defaultDestinationPackage()} from a wrapping {@link BuildMatchers} annotation, or
+     * the {@link #pojo()} package otherwise.
+     *
+     * @return The package where the matcher will be generated into.
      */
     String destinationPackage() default "";
 

@@ -8,5 +8,20 @@ import java.lang.annotation.Target;
  */
 @Target(ElementType.TYPE)
 public @interface BuildMatchers {
-    BuildMatcher[] value();
+    /**
+     * Alias for {@link #matchers()}.
+     *
+     * @return An array of {@link BuildMatcher} configurations.
+     */
+    BuildMatcher[] value() default {};
+
+    /**
+     * @return An array of {@link BuildMatcher} configurations.
+     */
+    BuildMatcher[] matchers() default {};
+
+    /**
+     * @return The default value to use for all {@link BuildMatcher#destinationPackage()} values.
+     */
+    String defaultDestinationPackage() default "";
 }

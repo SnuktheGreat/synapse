@@ -2,8 +2,8 @@ package com.impressiveinteractive.synapse.processor.test;
 
 import com.impressiveinteractive.synapse.processor.BuildMatcher;
 import com.impressiveinteractive.synapse.processor.BuildMatchers;
-import com.impressiveinteractive.synapse.processor.matchers.test.ClassMatcher;
-import com.impressiveinteractive.synapse.processor.matchers.test.MapMatcher;
+import com.impressiveinteractive.synapse.processor.matchers.test.java.util.ClassMatcher;
+import com.impressiveinteractive.synapse.processor.matchers.test.java.util.MapMatcher;
 import com.impressiveinteractive.synapse.processor.matchers.test.MotorVehicleMatcher;
 import com.impressiveinteractive.synapse.processor.matchers.test.ThingyMatcher;
 import com.impressiveinteractive.synapse.processor.matchers.test.VehicleCarMatcher;
@@ -19,47 +19,33 @@ import org.junit.Test;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.impressiveinteractive.synapse.processor.matchers.test.MotorVehicleMatcher.motorVehicle;
-import static com.impressiveinteractive.synapse.processor.matchers.test.VehicleCarMatcher.car;
-import static com.impressiveinteractive.synapse.processor.matchers.test.VehicleMatcher.vehicle;
 import static com.impressiveinteractive.synapse.processor.test.vehicle.MotorVehicle.Fuel.PETROL;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 
-@BuildMatchers({
-        @BuildMatcher(
-                pojo = Vehicle.class,
-                destinationPackage = "com.impressiveinteractive.synapse.processor.matchers.test",
-                includeObjectMethods = false),
-        @BuildMatcher(
-                pojo = MotorVehicle.class,
-                destinationPackage = "com.impressiveinteractive.synapse.processor.matchers.test",
-                includeObjectMethods = false),
-        @BuildMatcher(
-                pojo = Car.class,
-                destinationPackage = "com.impressiveinteractive.synapse.processor.matchers.test",
-                destinationName = "VehicleCarMatcher",
-                includeObjectMethods = false),
-        @BuildMatcher(
-                pojo = ParkingLot.class,
-                destinationPackage = "com.impressiveinteractive.synapse.processor.matchers.test",
-                includeObjectMethods = false),
-        @BuildMatcher(
-                pojo = Class.class,
-                destinationPackage = "com.impressiveinteractive.synapse.processor.matchers.test",
-                utilities = Methods.class,
-                staticMethodName = "cls"),
-        @BuildMatcher(
-                pojo = Map.class,
-                destinationPackage = "com.impressiveinteractive.synapse.processor.matchers.test"),
-        @BuildMatcher(
-                pojo = AdvancedFunctionalityTest.Thingy.class,
-                destinationPackage = "com.impressiveinteractive.synapse.processor.matchers.test"),
-        @BuildMatcher(
-                pojo = AdvancedFunctionalityTest.NameCollision.class,
-                destinationPackage = "com.impressiveinteractive.synapse.processor.matchers.test",
-                shortenGetterNames = false)})
+@BuildMatchers(
+        defaultDestinationPackage = "com.impressiveinteractive.synapse.processor.matchers.test",
+        matchers = {
+                @BuildMatcher(pojo = Vehicle.class, includeObjectMethods = false),
+                @BuildMatcher(pojo = MotorVehicle.class, includeObjectMethods = false),
+                @BuildMatcher(
+                        pojo = Car.class,
+                        destinationName = "VehicleCarMatcher",
+                        includeObjectMethods = false),
+                @BuildMatcher(pojo = ParkingLot.class, includeObjectMethods = false),
+                @BuildMatcher(
+                        pojo = Class.class,
+                        destinationPackage = "com.impressiveinteractive.synapse.processor.matchers.test.java.util",
+                        utilities = Methods.class,
+                        staticMethodName = "cls"),
+                @BuildMatcher(
+                        pojo = Map.class,
+                        destinationPackage = "com.impressiveinteractive.synapse.processor.matchers.test.java.util"),
+                @BuildMatcher(AdvancedFunctionalityTest.Thingy.class),
+                @BuildMatcher(
+                        pojo = AdvancedFunctionalityTest.NameCollision.class,
+                        shortenGetterNames = false)})
 public class AdvancedFunctionalityTest {
 
     private Car car;
