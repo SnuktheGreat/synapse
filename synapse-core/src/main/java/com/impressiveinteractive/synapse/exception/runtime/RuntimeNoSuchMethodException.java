@@ -15,7 +15,7 @@ public class RuntimeNoSuchMethodException extends RuntimeReflectiveOperationExce
     /**
      * Creates exception with given message.
      *
-     * @param message Given message.
+     * @param message Given message
      */
     public RuntimeNoSuchMethodException(String message) {
         super(message);
@@ -24,8 +24,8 @@ public class RuntimeNoSuchMethodException extends RuntimeReflectiveOperationExce
     /**
      * Creates exception with given message and cause.
      *
-     * @param message Given message.
-     * @param cause   Given cause.
+     * @param message Given message
+     * @param cause   Given cause
      */
     public RuntimeNoSuchMethodException(String message, Throwable cause) {
         super(message, cause);
@@ -34,7 +34,7 @@ public class RuntimeNoSuchMethodException extends RuntimeReflectiveOperationExce
     /**
      * Creates exception with the given cause.
      *
-     * @param cause Given cause.
+     * @param cause Given cause
      */
     public RuntimeNoSuchMethodException(Throwable cause) {
         super(cause);

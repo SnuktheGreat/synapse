@@ -8,7 +8,7 @@ public class WrappedIllegalAccessException extends WrappedReflectiveOperationExc
     /**
      * Create a new runtime variant of the given exception.
      *
-     * @param e Given exception.
+     * @param e Given exception
      */
     public WrappedIllegalAccessException(IllegalAccessException e) {
         super(e);

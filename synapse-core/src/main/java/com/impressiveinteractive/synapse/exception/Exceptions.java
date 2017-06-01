@@ -12,6 +12,8 @@ import java.util.function.Supplier;
 /**
  * Provides utility methods to deal with {@link Throwable} instances. Called {@link Exceptions} (mostly) to avoid
  * collisions with existing libraries.
+ *
+ * **test**
  */
 public final class Exceptions {
 
@@ -20,24 +22,23 @@ public final class Exceptions {
     }
 
     /**
-     * Use SLF4J style formatting on a given {@link Throwable Throwable's} message and cause constructor.
-     * <p>
-     * Example:
-     * <pre>
+     * Use SLF4J style formatting on a given {@link Throwable Throwable's} message and cause constructor. Example:
+     *
+     * ```java
      * IOException formatted = Exceptions.format(IOException::new,
-     *         "Testing {}, {}, {}.", "one", "two", "three", cause);
+     * "Testing {}, {}, {}.", "one", "two", "three", cause);
      *
      * assertThat(formatted.getMessage(), is(equalTo("Testing one, two, three.")));
      * assertThat(formatted.getCause(), is(cause));
-     * </pre>
+     * ```
      *
      * @param constructor A lambda that should be a method reference to a {@link Throwable} constructor like
      *                    {@link Throwable#Throwable(String, Throwable)}.
-     * @param message     The message of the exception.
-     * @param args        Arguments that will replace {} tokens in the given message. Optionally the final object can
+     * @param message     The message of the exception
+     * @param args        Arguments that will replace `{}` tokens in the given message Optionally the final object can
      *                    be a {@link Throwable} that will be used as the result's {@link Throwable#getCause() cause}.
-     * @param <T>         The type of {@link Throwable} created from this message.
-     * @return The {@link Throwable} with the formatted message and an optional cause.
+     * @param <T>         The type of {@link Throwable} created from this message
+     * @return The {@link Throwable} with the formatted message and an optional cause
      */
     public static <T extends Throwable> T format(
             BiFunction<String, Throwable, T> constructor, String message, Object... args) {
@@ -48,24 +49,23 @@ public final class Exceptions {
     /**
      * Use SLF4J style formatting on a given {@link Throwable Throwable's} message constructor. This method does not
      * allow the presence of a final {@link Throwable} cause like {@link #format(BiFunction, String, Object...)} and
-     * should only be used of no causal constructor is available for the given {@link Throwable} type.
-     * <p>
-     * Example:
-     * <pre>
+     * should only be used of no causal constructor is available for the given {@link Throwable} type. Example:
+     *
+     * ```java
      * IOException formatted = Exceptions.formatMessage(IOException::new,
-     *         "Testing {}, {}, {}.", "one", "two", "three");
+     * "Testing {}, {}, {}.", "one", "two", "three");
      *
      * assertThat(formatted.getMessage(), is(equalTo("Testing one, two, three.")));
      * assertThat(formatted.getCause(), is(nullValue()));
-     * </pre>
+     * ```
      *
      * @param constructor A lambda that should be a method reference to a {@link Throwable} constructor like
      *                    {@link Throwable#Throwable(String)}.
-     * @param message     The message of the exception.
-     * @param args        Arguments that will replace {} tokens in the given message. The final object <strong>must not
-     *                    </strong> be a {@link Throwable} cause.
-     * @param <T>         The type of {@link Throwable} created from this message.
-     * @return The {@link Throwable} with the formatted message.
+     * @param message     The message of the exception
+     * @param args        Arguments that will replace `{}` tokens in the given message The final object **must not**
+     *                    be a {@link Throwable} cause.
+     * @param <T>         The type of {@link Throwable} created from this message
+     * @return The {@link Throwable} with the formatted message
      * @see #format(BiFunction, String, Object...)
      */
     public static <T extends Throwable> T formatMessage(
@@ -85,31 +85,33 @@ public final class Exceptions {
      * Wrap the given {@link ExceptionalConsumer} in a regular {@link Consumer}. When the exceptional consumer throws
      * the checked exception type, it will be wrapped and thrown as the {@link RuntimeException} produced by the given
      * wrapper. Example:
-     * <pre>
+     *
+     * ```java
      * // The culprit
      * void consume(String consumable) throws IOException;
      *
      * ...
      *
      * Stream.of("Apple", "Orange")
-     *         .forEach(Exceptions.wrap(this::consume, RuntimeIOException::new));
-     * </pre>
-     * <p>
-     * If you want to rethrow the original checked exception, you can do this:
-     * <pre>
-     * try {
-     *     Stream.of("Apple", "Orange")
-     *             .forEach(Exceptions.wrap(this::consume, WrappedIOException::new));
-     * } catch (WrappedIOException e) {
-     *     e.unwrap(); // Throws original IOException
-     * }
-     * </pre>
+     * .forEach(Exceptions.wrap(this::consume, RuntimeIOException::new));
+     * ```
      *
-     * @param consumer The consumer throwing checked exceptions.
-     * @param wrapper  Transforms the checked exception to an unchecked exception.
-     * @param <T>      The type of object consumed by the consumer.
-     * @param <E>      The checked exception type thrown by the {@link ExceptionalConsumer} and wrapped by the wrapper.
-     * @return A regular {@link Consumer}.
+     * If you want to rethrow the original checked exception, you can do this:
+     *
+     * ```java
+     * try {
+     * Stream.of("Apple", "Orange")
+     * .forEach(Exceptions.wrap(this::consume, WrappedIOException::new));
+     * } catch (WrappedIOException e) {
+     * e.unwrap(); // Throws original IOException
+     * }
+     * ```
+     *
+     * @param consumer The consumer throwing checked exceptions
+     * @param wrapper  Transforms the checked exception to an unchecked exception
+     * @param <T>      The type of object consumed by the consumer
+     * @param <E>      The checked exception type thrown by the {@link ExceptionalConsumer} and wrapped by the wrapper
+     * @return A regular {@link Consumer}
      */
     @SuppressWarnings("unchecked")
     public static <T, E extends Exception> Consumer<T> wrapExceptionalConsumer(
@@ -130,31 +132,33 @@ public final class Exceptions {
      * Wrap the given {@link ExceptionalSupplier} in a regular {@link Supplier}. When the exceptional supplier throws
      * the checked exception type, it will be wrapped and thrown as the {@link RuntimeException} produced by the given
      * wrapper. Example:
-     * <pre>
+     *
+     * ```java
      * // The culprit
      * String supply() throws IOException;
      *
      * ...
      *
      * Stream.generate(Exceptions.wrap(this::supply, RuntimeIOException::new))
-     *         .forEach(LOGGER::info);
-     * </pre>
-     * <p>
-     * If you want to rethrow the original checked exception, you can do this:
-     * <pre>
-     * try {
-     *     Stream.generate(Exceptions.wrap(this::supply, WrappedIOException::new))
-     *             .forEach(LOGGER::info);
-     * } catch (WrappedIOException e) {
-     *     e.unwrap(); // Throws original IOException
-     * }
-     * </pre>
+     * .forEach(LOGGER::info);
+     * ```
      *
-     * @param supplier The supplier throwing checked exceptions.
-     * @param wrapper  Transforms the checked exception to an unchecked exception.
-     * @param <T>      The type of object supplier by the supplier.
-     * @param <E>      The checked exception type thrown by the {@link ExceptionalSupplier} and wrapped by the wrapper.
-     * @return A regular {@link Supplier}.
+     * If you want to rethrow the original checked exception, you can do this:
+     *
+     * ```java
+     * try {
+     * Stream.generate(Exceptions.wrap(this::supply, WrappedIOException::new))
+     * .forEach(LOGGER::info);
+     * } catch (WrappedIOException e) {
+     * e.unwrap(); // Throws original IOException
+     * }
+     * ```
+     *
+     * @param supplier The supplier throwing checked exceptions
+     * @param wrapper  Transforms the checked exception to an unchecked exception
+     * @param <T>      The type of object supplier by the supplier
+     * @param <E>      The checked exception type thrown by the {@link ExceptionalSupplier} and wrapped by the wrapper
+     * @return A regular {@link Supplier}
      */
     @SuppressWarnings("unchecked")
     public static <T, E extends Exception> Supplier<T> wrapExceptionalSupplier(
@@ -175,7 +179,8 @@ public final class Exceptions {
      * Wrap the given {@link ExceptionalFunction} in a regular {@link Function}. When the exceptional function throws
      * the checked exception type, it will be wrapped and thrown as the {@link RuntimeException} produced by the given
      * wrapper. Example:
-     * <pre>
+     *
+     * ```java
      * // The culprit
      * String transform(String consumable) throws IOException;
      *
@@ -183,27 +188,28 @@ public final class Exceptions {
      *
      *
      * Stream.of("Apple", "Orange")
-     *         .map(Exceptions.wrap(this::transform, RuntimeIOException::new))
-     *         .forEach(LOGGER::info);
-     * </pre>
-     * <p>
-     * If you want to rethrow the original checked exception, you can do this:
-     * <pre>
-     * try {
-     *     Stream.of("Apple", "Orange")
-     *             .map(Exceptions.wrap(this::transform, WrappedIOException::new))
-     *             .forEach(LOGGER::info);
-     * } catch (WrappedIOException e) {
-     *     e.unwrap(); // Throws original IOException
-     * }
-     * </pre>
+     * .map(Exceptions.wrap(this::transform, RuntimeIOException::new))
+     * .forEach(LOGGER::info);
+     * ```
      *
-     * @param function The function throwing checked exceptions.
-     * @param wrapper  Transforms the checked exception to an unchecked exception.
-     * @param <I>      The input argument type for the function.
-     * @param <O>      The return type for the function.
-     * @param <E>      The checked exception type thrown by the {@link ExceptionalFunction}.
-     * @return A regular {@link Function}.
+     * If you want to rethrow the original checked exception, you can do this:
+     *
+     * ```java
+     * try {
+     * Stream.of("Apple", "Orange")
+     * .map(Exceptions.wrap(this::transform, WrappedIOException::new))
+     * .forEach(LOGGER::info);
+     * } catch (WrappedIOException e) {
+     * e.unwrap(); // Throws original IOException
+     * }
+     * ```
+     *
+     * @param function The function throwing checked exceptions
+     * @param wrapper  Transforms the checked exception to an unchecked exception
+     * @param <I>      The input argument type for the function
+     * @param <O>      The return type for the function
+     * @param <E>      The checked exception type thrown by the {@link ExceptionalFunction}
+     * @return A regular {@link Function}
      */
     @SuppressWarnings("unchecked")
     public static <I, O, E extends Exception> Function<I, O> wrapExceptionalFunction(
@@ -222,35 +228,37 @@ public final class Exceptions {
 
     /**
      * Short for {@link #wrapExceptionalConsumer(ExceptionalConsumer, Function)}.
-     * <p>
+     *
      * Wrap the given {@link ExceptionalConsumer} in a regular {@link Consumer}. When the exceptional consumer throws
      * the checked exception type, it will be wrapped and thrown as the {@link RuntimeException} produced by the given
      * wrapper. Example:
-     * <pre>
+     *
+     * ```java
      * // The culprit
      * void consume(String consumable) throws IOException;
      *
      * ...
      *
      * Stream.of("Apple", "Orange")
-     *         .forEach(Exceptions.wrap(this::consume, RuntimeIOException::new));
-     * </pre>
-     * <p>
-     * If you want to rethrow the original checked exception, you can do this:
-     * <pre>
-     * try {
-     *     Stream.of("Apple", "Orange")
-     *             .forEach(Exceptions.wrap(this::consume, WrappedIOException::new));
-     * } catch (WrappedIOException e) {
-     *     e.unwrap(); // Throws original IOException
-     * }
-     * </pre>
+     * .forEach(Exceptions.wrap(this::consume, RuntimeIOException::new));
+     * ```
      *
-     * @param consumer The consumer throwing checked exceptions.
-     * @param wrapper  Transforms the checked exception to an unchecked exception.
-     * @param <T>      The type of object consumed by the consumer.
-     * @param <E>      The checked exception type thrown by the {@link ExceptionalConsumer} and wrapped by the wrapper.
-     * @return A regular {@link Consumer}.
+     * If you want to rethrow the original checked exception, you can do this:
+     *
+     * ```java
+     * try {
+     * Stream.of("Apple", "Orange")
+     * .forEach(Exceptions.wrap(this::consume, WrappedIOException::new));
+     * } catch (WrappedIOException e) {
+     * e.unwrap(); // Throws original IOException
+     * }
+     * ```
+     *
+     * @param consumer The consumer throwing checked exceptions
+     * @param wrapper  Transforms the checked exception to an unchecked exception
+     * @param <T>      The type of object consumed by the consumer
+     * @param <E>      The checked exception type thrown by the {@link ExceptionalConsumer} and wrapped by the wrapper
+     * @return A regular {@link Consumer}
      */
     public static <T, E extends Exception> Consumer<T> wrapExceptional(
             ExceptionalConsumer<T, E> consumer,
@@ -260,35 +268,37 @@ public final class Exceptions {
 
     /**
      * Short for {@link #wrapExceptionalSupplier(ExceptionalSupplier, Function)}
-     * <p>
+     *
      * Wrap the given {@link ExceptionalSupplier} in a regular {@link Supplier}. When the exceptional supplier throws
      * the checked exception type, it will be wrapped and thrown as the {@link RuntimeException} produced by the given
      * wrapper. Example:
-     * <pre>
+     *
+     * ```java
      * // The culprit
      * String supply() throws IOException;
      *
      * ...
      *
      * Stream.generate(Exceptions.wrap(this::supply, RuntimeIOException::new))
-     *         .forEach(LOGGER::info);
-     * </pre>
-     * <p>
-     * If you want to rethrow the original checked exception, you can do this:
-     * <pre>
-     * try {
-     *     Stream.generate(Exceptions.wrap(this::supply, WrappedIOException::new))
-     *             .forEach(LOGGER::info);
-     * } catch (WrappedIOException e) {
-     *     e.unwrap(); // Throws original IOException
-     * }
-     * </pre>
+     * .forEach(LOGGER::info);
+     * ```
      *
-     * @param supplier The supplier throwing checked exceptions.
-     * @param wrapper  Transforms the checked exception to an unchecked exception.
-     * @param <T>      The type of object supplier by the supplier.
-     * @param <E>      The checked exception type thrown by the {@link ExceptionalSupplier} and wrapped by the wrapper.
-     * @return A regular {@link Supplier}.
+     * If you want to rethrow the original checked exception, you can do this:
+     *
+     * ```java
+     * try {
+     * Stream.generate(Exceptions.wrap(this::supply, WrappedIOException::new))
+     * .forEach(LOGGER::info);
+     * } catch (WrappedIOException e) {
+     * e.unwrap(); // Throws original IOException
+     * }
+     * ```
+     *
+     * @param supplier The supplier throwing checked exceptions
+     * @param wrapper  Transforms the checked exception to an unchecked exception
+     * @param <T>      The type of object supplier by the supplier
+     * @param <E>      The checked exception type thrown by the {@link ExceptionalSupplier} and wrapped by the wrapper
+     * @return A regular {@link Supplier}
      */
     public static <T, E extends Exception> Supplier<T> wrapExceptional(
             ExceptionalSupplier<T, E> supplier,
@@ -297,12 +307,13 @@ public final class Exceptions {
     }
 
     /**
-     * Short for {@link #wrapExceptionalFunction(ExceptionalFunction, Function)} 
-     * <p>
+     * Short for {@link #wrapExceptionalFunction(ExceptionalFunction, Function)}
+     *
      * Wrap the given {@link ExceptionalFunction} in a regular {@link Function}. When the exceptional function throws
      * the checked exception type, it will be wrapped and thrown as the {@link RuntimeException} produced by the given
      * wrapper. Example:
-     * <pre>
+     *
+     * ```java
      * // The culprit
      * String transform(String consumable) throws IOException;
      *
@@ -310,27 +321,28 @@ public final class Exceptions {
      *
      *
      * Stream.of("Apple", "Orange")
-     *         .map(Exceptions.wrap(this::transform, RuntimeIOException::new))
-     *         .forEach(LOGGER::info);
-     * </pre>
-     * <p>
-     * If you want to rethrow the original checked exception, you can do this:
-     * <pre>
-     * try {
-     *     Stream.of("Apple", "Orange")
-     *             .map(Exceptions.wrap(this::transform, WrappedIOException::new))
-     *             .forEach(LOGGER::info);
-     * } catch (WrappedIOException e) {
-     *     e.unwrap(); // Throws original IOException
-     * }
-     * </pre>
+     * .map(Exceptions.wrap(this::transform, RuntimeIOException::new))
+     * .forEach(LOGGER::info);
+     * ```
      *
-     * @param function The function throwing checked exceptions.
-     * @param wrapper  Transforms the checked exception to an unchecked exception.
-     * @param <I>      The input argument type for the function.
-     * @param <O>      The return type for the function.
-     * @param <E>      The checked exception type thrown by the {@link ExceptionalFunction}.
-     * @return A regular {@link Function}.
+     * If you want to rethrow the original checked exception, you can do this:
+     *
+     * ```java
+     * try {
+     * Stream.of("Apple", "Orange")
+     * .map(Exceptions.wrap(this::transform, WrappedIOException::new))
+     * .forEach(LOGGER::info);
+     * } catch (WrappedIOException e) {
+     * e.unwrap(); // Throws original IOException
+     * }
+     * ```
+     *
+     * @param function The function throwing checked exceptions
+     * @param wrapper  Transforms the checked exception to an unchecked exception
+     * @param <I>      The input argument type for the function
+     * @param <O>      The return type for the function
+     * @param <E>      The checked exception type thrown by the {@link ExceptionalFunction}
+     * @return A regular {@link Function}
      */
     public static <I, O, E extends Exception> Function<I, O> wrapExceptional(
             ExceptionalFunction<I, O, E> function,

@@ -8,7 +8,7 @@ public class WrappedClassNotFoundException extends WrappedReflectiveOperationExc
     /**
      * Create a new runtime variant of the given exception.
      *
-     * @param e Given exception.
+     * @param e Given exception
      */
     public WrappedClassNotFoundException(ClassNotFoundException e) {
         super(e);

@@ -10,7 +10,7 @@ public class WrappedInvocationTargetException extends WrappedReflectiveOperation
     /**
      * Create a new runtime variant of the given exception.
      *
-     * @param e Given exception.
+     * @param e Given exception
      */
     public WrappedInvocationTargetException(InvocationTargetException e) {
         super(e);
