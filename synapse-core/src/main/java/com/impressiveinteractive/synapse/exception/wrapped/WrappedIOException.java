@@ -10,7 +10,7 @@ public class WrappedIOException extends WrappedException {
     /**
      * Create a new runtime variant of the given exception.
      *
-     * @param e Given exception.
+     * @param e Given exception
      */
     public WrappedIOException(IOException e) {
         super(e);

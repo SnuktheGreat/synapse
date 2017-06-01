@@ -15,7 +15,7 @@ public class RuntimeIllegalAccessException extends RuntimeReflectiveOperationExc
     /**
      * Creates exception with given message.
      *
-     * @param message Given message.
+     * @param message Given message
      */
     public RuntimeIllegalAccessException(String message) {
         super(message);
@@ -24,8 +24,8 @@ public class RuntimeIllegalAccessException extends RuntimeReflectiveOperationExc
     /**
      * Creates exception with given message and cause.
      *
-     * @param message Given message.
-     * @param cause   Given cause.
+     * @param message Given message
+     * @param cause   Given cause
      */
     public RuntimeIllegalAccessException(String message, Throwable cause) {
         super(message, cause);
@@ -34,7 +34,7 @@ public class RuntimeIllegalAccessException extends RuntimeReflectiveOperationExc
     /**
      * Creates exception with the given cause.
      *
-     * @param cause Given cause.
+     * @param cause Given cause
      */
     public RuntimeIllegalAccessException(Throwable cause) {
         super(cause);

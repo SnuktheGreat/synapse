@@ -8,7 +8,7 @@ public class WrappedInstantiationException extends WrappedReflectiveOperationExc
     /**
      * Create a new runtime variant of the given exception.
      *
-     * @param e Given exception.
+     * @param e Given exception
      */
     public WrappedInstantiationException(InstantiationException e) {
         super(e);

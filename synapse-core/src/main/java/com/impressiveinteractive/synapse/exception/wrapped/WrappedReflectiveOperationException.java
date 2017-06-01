@@ -8,7 +8,7 @@ public class WrappedReflectiveOperationException extends WrappedException {
     /**
      * Create a new runtime variant of the given exception.
      *
-     * @param e Given exception.
+     * @param e Given exception
      */
     public WrappedReflectiveOperationException(ReflectiveOperationException e) {
         super(e);

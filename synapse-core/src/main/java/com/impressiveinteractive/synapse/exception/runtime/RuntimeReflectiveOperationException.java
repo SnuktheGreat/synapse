@@ -15,7 +15,7 @@ public class RuntimeReflectiveOperationException extends RuntimeException {
     /**
      * Creates exception with given message.
      *
-     * @param message Given message.
+     * @param message Given message
      */
     public RuntimeReflectiveOperationException(String message) {
         super(message);
@@ -24,8 +24,8 @@ public class RuntimeReflectiveOperationException extends RuntimeException {
     /**
      * Creates exception with given message and cause.
      *
-     * @param message Given message.
-     * @param cause   Given cause.
+     * @param message Given message
+     * @param cause   Given cause
      */
     public RuntimeReflectiveOperationException(String message, Throwable cause) {
         super(message, cause);
@@ -34,7 +34,7 @@ public class RuntimeReflectiveOperationException extends RuntimeException {
     /**
      * Creates exception with the given cause.
      *
-     * @param cause Given cause.
+     * @param cause Given cause
      */
     public RuntimeReflectiveOperationException(Throwable cause) {
         super(cause);

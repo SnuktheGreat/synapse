@@ -8,7 +8,7 @@ public class WrappedNoSuchMethodException extends WrappedReflectiveOperationExce
     /**
      * Create a new runtime variant of the given exception.
      *
-     * @param e Given exception.
+     * @param e Given exception
      */
     public WrappedNoSuchMethodException(NoSuchMethodException e) {
         super(e);

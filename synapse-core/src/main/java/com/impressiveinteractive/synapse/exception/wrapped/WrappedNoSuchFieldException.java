@@ -8,7 +8,7 @@ public class WrappedNoSuchFieldException extends WrappedReflectiveOperationExcep
     /**
      * Create a new runtime variant of the given exception.
      *
-     * @param e Given exception.
+     * @param e Given exception
      */
     public WrappedNoSuchFieldException(NoSuchFieldException e) {
         super(e);
