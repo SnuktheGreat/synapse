@@ -8,8 +8,6 @@ import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -32,8 +30,6 @@ import static org.mockito.Mockito.when;
 @SuppressWarnings({"ThrowableInstanceNeverThrown", "ThrowableResultOfMethodCallIgnored"})
 public class ExceptionsTest {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(ExceptionsTest.class);
-
     @Rule
     public ExpectedException exception = ExpectedException.none();
 
@@ -41,8 +37,6 @@ public class ExceptionsTest {
     private MethodReferences references;
 
     private final FileNotFoundException cause = new FileNotFoundException("I couldn't find ~/Desktop/secrets");
-
-    private Narrator narrator = new Narrator();
 
     @Test
     public void format() throws Exception {
@@ -136,7 +130,7 @@ public class ExceptionsTest {
         exception.expect(RuntimeIOException.class);
 
         Stream.generate(Exceptions.wrapExceptional(references::supply, RuntimeIOException::new))
-                .forEach(LOGGER::info);
+                .forEach(this::consume);
     }
 
     @Test
@@ -144,11 +138,11 @@ public class ExceptionsTest {
         IOException expected = new IOException();
         when(references.supply()).thenThrow(expected);
 
-        this.exception.expect(is(expected));
+        exception.expect(is(expected));
 
         try {
             Stream.generate(Exceptions.wrapExceptional(references::supply, WrappedIOException::new))
-                    .forEach(LOGGER::info);
+                    .forEach(this::consume);
         } catch (WrappedIOException e) {
             e.unwrap(); // Throws original IOException
         }
@@ -162,7 +156,7 @@ public class ExceptionsTest {
         exception.expect(is(expected));
 
         Stream.generate(Exceptions.wrapExceptional(references::supply, RuntimeIOException::new))
-                .forEach(LOGGER::info);
+                .forEach(this::consume);
     }
 
     @Test
@@ -173,7 +167,7 @@ public class ExceptionsTest {
 
         Stream.of("Apple", "Orange")
                 .map(Exceptions.wrapExceptional(references::transform, RuntimeIOException::new))
-                .forEach(LOGGER::info);
+                .forEach(this::consume);
     }
 
     @Test
@@ -186,7 +180,7 @@ public class ExceptionsTest {
         try {
             Stream.of("Apple", "Orange")
                     .map(Exceptions.wrapExceptional(references::transform, WrappedIOException::new))
-                    .forEach(LOGGER::info);
+                    .forEach(this::consume);
         } catch (WrappedIOException e) {
             e.unwrap(); // Throws original IOException
         }
@@ -201,7 +195,12 @@ public class ExceptionsTest {
 
         Stream.of("Apple", "Orange")
                 .map(Exceptions.wrapExceptional(references::transform, RuntimeIOException::new))
-                .forEach(LOGGER::info);
+                .forEach(this::consume);
+    }
+
+    @SuppressWarnings("unused")
+    private void consume(String string) {
+        // Noop, used to trigger terminal stream operations.
     }
 
     private interface MethodReferences {
@@ -210,11 +209,5 @@ public class ExceptionsTest {
         String supply() throws IOException;
 
         String transform(String consumable) throws IOException;
-    }
-
-    private static class Narrator {
-        public void narrate(String line) {
-            LOGGER.info(line);
-        }
     }
 }
