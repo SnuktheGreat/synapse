@@ -1,6 +1,5 @@
 package com.impressiveinteractive.synapse.test;
 
-import com.google.common.reflect.TypeToken;
 import com.impressiveinteractive.synapse.lambda.SerializableFunction;
 import com.impressiveinteractive.synapse.reflect.Typed;
 import org.hamcrest.Matcher;
@@ -208,15 +207,6 @@ public class ChainableMatcherTest {
         List<String> strings = singletonList("String value");
 
         assertThat(strings, is(ofType(new Typed<List<String>>() {})
-                .where(List::size, is(1))
-                .where("get(0)", l -> l.get(0), is("String value"))));
-    }
-
-    @Test
-    public void testCreateFromTypeToken() throws Exception {
-        List<String> strings = singletonList("String value");
-
-        assertThat(strings, is(ofType(new TypeToken<List<String>>() {})
                 .where(List::size, is(1))
                 .where("get(0)", l -> l.get(0), is("String value"))));
     }
