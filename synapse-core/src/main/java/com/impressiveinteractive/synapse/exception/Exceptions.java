@@ -1,8 +1,5 @@
 package com.impressiveinteractive.synapse.exception;
 
-import org.slf4j.helpers.FormattingTuple;
-import org.slf4j.helpers.MessageFormatter;
-
 import java.util.Arrays;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -41,8 +38,8 @@ public final class Exceptions {
      */
     public static <T extends Throwable> T format(
             BiFunction<String, Throwable, T> constructor, String message, Object... args) {
-        FormattingTuple tuple = MessageFormatter.arrayFormat(message, args);
-        return reduceStackTrace(constructor.apply(tuple.getMessage(), tuple.getThrowable()));
+        ExceptionalMessage exceptionalMessage = ExceptionalMessage.parse(message, args);
+        return reduceStackTrace(constructor.apply(exceptionalMessage.getMessage(), exceptionalMessage.getThrowable()));
     }
 
     /**
@@ -70,15 +67,15 @@ public final class Exceptions {
      */
     public static <T extends Throwable> T formatMessage(
             Function<String, T> constructor, String message, Object... args) {
-        FormattingTuple tuple = MessageFormatter.arrayFormat(message, args);
-        Throwable throwable = tuple.getThrowable();
+        ExceptionalMessage exceptionalMessage = ExceptionalMessage.parse(message, args);
+        Throwable throwable = exceptionalMessage.getThrowable();
         if (throwable != null) {
             IllegalArgumentException iae = new IllegalArgumentException(
                     "Unexpected throwable when formatting message.", throwable);
-            iae.addSuppressed(reduceStackTrace(constructor.apply(tuple.getMessage())));
+            iae.addSuppressed(reduceStackTrace(constructor.apply(exceptionalMessage.getMessage())));
             throw iae;
         }
-        return reduceStackTrace(constructor.apply(tuple.getMessage()));
+        return reduceStackTrace(constructor.apply(exceptionalMessage.getMessage()));
     }
 
     /**
@@ -297,7 +294,7 @@ public final class Exceptions {
     }
 
     /**
-     * Short for {@link #wrapExceptionalFunction(ExceptionalFunction, Function)} 
+     * Short for {@link #wrapExceptionalFunction(ExceptionalFunction, Function)}
      * <p>
      * Wrap the given {@link ExceptionalFunction} in a regular {@link Function}. When the exceptional function throws
      * the checked exception type, it will be wrapped and thrown as the {@link RuntimeException} produced by the given
