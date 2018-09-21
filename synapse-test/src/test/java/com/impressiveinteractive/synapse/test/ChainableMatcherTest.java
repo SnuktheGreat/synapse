@@ -1,6 +1,7 @@
 package com.impressiveinteractive.synapse.test;
 
 import com.impressiveinteractive.synapse.lambda.SerializableFunction;
+import com.impressiveinteractive.synapse.reflect.Typed;
 import org.hamcrest.Matcher;
 import org.hamcrest.StringDescription;
 import org.junit.Test;
@@ -12,6 +13,7 @@ import java.util.stream.Stream;
 
 import static com.impressiveinteractive.synapse.test.ChainableMatcher.map;
 import static com.impressiveinteractive.synapse.test.ChainableMatcher.ofType;
+import static java.util.Collections.singletonList;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsString;
@@ -198,6 +200,15 @@ public class ChainableMatcherTest {
         assertThat(matcher.matches(couple), is(false)); // Maria is not a male
 
         assertThat(describeMismatch(matcher, couple), startsWith("has unexpected value for:\n\tmales item 0:"));
+    }
+
+    @Test
+    public void testCreateFromTyped() throws Exception {
+        List<String> strings = singletonList("String value");
+
+        assertThat(strings, is(ofType(new Typed<List<String>>() {})
+                .where(List::size, is(1))
+                .where("get(0)", l -> l.get(0), is("String value"))));
     }
 
     // Protected method
