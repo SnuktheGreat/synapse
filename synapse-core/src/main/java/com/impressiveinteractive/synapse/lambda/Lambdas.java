@@ -5,7 +5,7 @@ import java.lang.invoke.SerializedLambda;
 import java.util.List;
 
 /**
- * Utility class for lambdas. This class is mostly built arround the {@link SerializableLambda}, which can be used to
+ * Utility class for lambdas. This class is mostly built around the {@link SerializableLambda}, which can be used to
  * extract additional information about where the lambda is created, what kind of lambda it is, etc.
  */
 public final class Lambdas {

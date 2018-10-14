@@ -3,7 +3,7 @@ package com.impressiveinteractive.synapse.exception.wrapped;
 /**
  * This class is a {@link RuntimeException} designed to wrap checked exceptions. It is recommended to use the most
  * specific subclass of this exception, in order to keep a similar type hierarchy to the original exception. A more
- * specific sublcass should also have a more specific {@link #unwrap()} signature.
+ * specific subclass should also have a more specific {@link #unwrap()} signature.
  * <p>
  * This class was designed to be used in conjunction with the {@code wrap} methods in
  * {@link com.impressiveinteractive.synapse.exception.Exceptions}

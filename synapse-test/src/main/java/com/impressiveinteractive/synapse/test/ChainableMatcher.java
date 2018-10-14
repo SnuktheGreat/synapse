@@ -130,7 +130,7 @@ public class ChainableMatcher<T> extends BaseMatcher<T> {
         } else if (kind == 6 || serialized.getCapturedArgCount() == 1) {
             String className = serialized.getImplClass();
             int lastSlash = className.lastIndexOf('/');
-            return className.substring(lastSlash + 1, className.length()) + "." + serialized.getImplMethodName()
+            return className.substring(lastSlash + 1) + "." + serialized.getImplMethodName()
                     + "(" + appliedTo + ")";
         }
         throw new IllegalArgumentException("Unknown type of SerializableFunction.");
@@ -143,7 +143,7 @@ public class ChainableMatcher<T> extends BaseMatcher<T> {
             if (isGetter(serialized)) {
                 String nameWithCapitalStart = methodName.replaceAll("^(get|is)([A-Z].*$)", "$2");
                 name = nameWithCapitalStart.substring(0, 1).toLowerCase()
-                        + nameWithCapitalStart.substring(1, nameWithCapitalStart.length());
+                        + nameWithCapitalStart.substring(1);
             } else {
                 name = methodName + "()";
             }
