@@ -27,11 +27,11 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
-@SuppressWarnings({"ThrowableInstanceNeverThrown", "ThrowableResultOfMethodCallIgnored"})
+@SuppressWarnings({"ThrowableInstanceNeverThrown", "ThrowableResultOfMethodCallIgnored", "EndlessStream"})
 public class ExceptionsTest {
 
     @Rule
-    public ExpectedException exception = ExpectedException.none();
+    public final ExpectedException exception = ExpectedException.none();
 
     @Mock
     private MethodReferences references;
@@ -39,7 +39,7 @@ public class ExceptionsTest {
     private final FileNotFoundException cause = new FileNotFoundException("I couldn't find ~/Desktop/secrets");
 
     @Test
-    public void format() throws Exception {
+    public void format() {
         IOException formatted = Exceptions.format(IOException::new,
                 "Testing {}, {}, {}.", "one", "two", "three", cause);
 
@@ -48,7 +48,7 @@ public class ExceptionsTest {
     }
 
     @Test
-    public void formatMessage() throws Exception {
+    public void formatMessage() {
         IOException formatted = Exceptions.formatMessage(IOException::new,
                 "Testing {}, {}, {}.", "one", "two", "three");
 
@@ -57,13 +57,13 @@ public class ExceptionsTest {
     }
 
     @Test
-    public void formatMessage_exceptionArgumentAdded() throws Exception {
+    public void formatMessage_exceptionArgumentAdded() {
         exception.expect(IllegalArgumentException.class);
         Exceptions.formatMessage(IOException::new, "Testing {}, {}, {}.", "one", "two", "three", cause);
     }
 
     @Test
-    public void wrapExceptional_exampleRuntimeEquivalent() throws Exception {
+    public void wrapExceptional_exampleRuntimeEquivalent() {
         List<String> types = Stream.of("/does/not/exist/text.txt", "/does/not/exist/image.jpg")
                 .map(File::new)
                 .map(File::toPath)

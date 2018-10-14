@@ -11,7 +11,7 @@ public class ExceptionalMessageTest {
     private static final RuntimeException EXCEPTION = new RuntimeException();
 
     @Test
-    public void compareMessageWithSlf4j() throws Exception {
+    public void compareMessageWithSlf4j() {
         assertThat(ExceptionalMessage.parse("This is a test").getMessage(),
                 is("This is a test"));
         assertThat(ExceptionalMessage.parse("This is a {}", "test").getMessage(),
@@ -44,7 +44,7 @@ public class ExceptionalMessageTest {
     }
 
     @Test
-    public void compareThrowableWithSlf4j() throws Exception {
+    public void compareThrowableWithSlf4j() {
         assertThat(ExceptionalMessage.parse("This is a test").getThrowable(),
                 is(nullValue()));
         assertThat(ExceptionalMessage.parse("This is a {}", "test").getThrowable(),

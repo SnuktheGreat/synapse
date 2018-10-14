@@ -11,23 +11,23 @@ import static org.junit.Assert.assertThat;
 
 public class LambdasTest {
     @Test
-    public void testConsumer() throws Exception {
+    public void testConsumer() {
         assertThat(Lambdas.serializable(this::consumer).getInputClass(), is(equalTo(String.class)));
     }
 
     @Test
-    public void testFunction() throws Exception {
+    public void testFunction() {
         assertThat(Lambdas.serializable(this::transform).getInputClass(), is(equalTo(int.class)));
         assertThat(Lambdas.serializable(this::transform).getResultClass(), is(equalTo(String.class)));
     }
 
     @Test
-    public void testSupplier() throws Exception {
+    public void testSupplier() {
         assertThat(Lambdas.serializable(this::supply).getResultClass(), is(equalTo(String.class)));
     }
 
     @Test
-    public void getRawParameterTypes() throws Exception {
+    public void getRawParameterTypes() {
         SerializableBiConsumer<String, Integer> biConsumer = this::consume;
         List<Class<?>> types = Lambdas.getRawParameterTypes(biConsumer.serialized());
 

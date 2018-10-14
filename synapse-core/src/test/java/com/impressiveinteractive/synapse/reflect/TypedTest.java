@@ -15,7 +15,7 @@ public class TypedTest {
     public final ExpectedException expectedException = ExpectedException.none();
 
     @Test
-    public void testTypedFromClass() throws Exception {
+    public void testTypedFromClass() {
         Typed<String> stringTyped = Typed.of(String.class);
 
         assertThat(stringTyped.getType(), is(equalTo(String.class)));
@@ -23,7 +23,7 @@ public class TypedTest {
     }
 
     @Test
-    public void testSimpleType() throws Exception {
+    public void testSimpleType() {
         Typed<String> stringTyped = new Typed<String>() {};
 
         assertThat(stringTyped.getType(), is(equalTo(String.class)));
@@ -31,7 +31,7 @@ public class TypedTest {
     }
 
     @Test
-    public void testNestedType() throws Exception {
+    public void testNestedType() {
         Typed<List<String>> stringTyped = new Typed<List<String>>() {};
 
         assertThat(stringTyped.getType().getTypeName(), is("java.util.List<java.lang.String>"));
@@ -39,7 +39,7 @@ public class TypedTest {
     }
 
     @Test
-    public <T> void testUnboundType() throws Exception {
+    public <T> void testUnboundType() {
         expectedException.expect(IllegalArgumentException.class);
         new Typed<T>() {};
     }

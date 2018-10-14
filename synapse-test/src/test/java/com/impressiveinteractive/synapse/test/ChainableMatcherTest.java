@@ -26,7 +26,7 @@ public class ChainableMatcherTest {
 
     // Demonstrations
     @Test
-    public void testSimpleUseCase() throws Exception {
+    public void testSimpleUseCase() {
         assertThat(Person.name("Steve", "Jones").gender(Gender.MALE).age(43).awesome(true),
                 is(ofType(Person.class)
                         .where(Person::getFirstName, is("Steve"))
@@ -37,7 +37,7 @@ public class ChainableMatcherTest {
     }
 
     @Test
-    public void testSimpleUseCase_failure() throws Exception {
+    public void testSimpleUseCase_failure() {
         ChainableMatcher<Person> matcher = ofType(Person.class)
                 .where(Person::getFirstName, is("Steve"))
                 .where(Person::getSurName, is("Jones"))
@@ -56,7 +56,7 @@ public class ChainableMatcherTest {
     }
 
     @Test
-    public void testSimpleUseCase_extendedChainable() throws Exception {
+    public void testSimpleUseCase_extendedChainable() {
         assertThat(
                 Person.name("James", "Wilson").gender(Gender.MALE).age(33).awesome(false),
                 isPerson()
@@ -68,7 +68,7 @@ public class ChainableMatcherTest {
     }
 
     @Test
-    public void testNestedUseCase() throws Exception {
+    public void testNestedUseCase() {
         assertThat(
                 couple()
                         .woman(Person.name("Maria", "Wilson").gender(Gender.FEMALE).age(31).awesome(true))
@@ -89,7 +89,7 @@ public class ChainableMatcherTest {
     }
 
     @Test
-    public void testNestedUseCase_failure() throws Exception {
+    public void testNestedUseCase_failure() {
         ChainableMatcher<Couple> matcher = ofType(Couple.class)
                 .where(Couple::getMan, is(ofType(Person.class)
                         .where(Person::getFirstName, is("James"))
@@ -123,7 +123,7 @@ public class ChainableMatcherTest {
 
     @Test
     @SuppressWarnings("unchecked")
-    public void testNestedUseCaseWithMapping() throws Exception {
+    public void testNestedUseCaseWithMapping() {
         assertThat(
                 people(
                         Person.name("Maria", "Wilson").gender(Gender.FEMALE).age(31).awesome(true),
@@ -137,7 +137,7 @@ public class ChainableMatcherTest {
 
     @Test
     @SuppressWarnings("unchecked")
-    public void testNestedUseCaseWithMapping_failure() throws Exception {
+    public void testNestedUseCaseWithMapping_failure() {
         ChainableMatcher<People> matcher = ofType(People.class)
                 .where(map(People::getList)
                                 .to("get(0)", list -> list.get(0))
@@ -156,7 +156,7 @@ public class ChainableMatcherTest {
 
     @Test
     @SuppressWarnings("unchecked")
-    public void testNestedUseCaseWithMappingFromWhereAndMap_failure() throws Exception {
+    public void testNestedUseCaseWithMappingFromWhereAndMap_failure() {
         ChainableMatcher<People> matcher = ofType(People.class)
                 .where(map(this::firstPerson).to(Person::getFirstName), is("James"));
 
@@ -175,7 +175,7 @@ public class ChainableMatcherTest {
     }
 
     @Test
-    public void testWrongType() throws Exception {
+    public void testWrongType() {
         ChainableMatcher<Person> matcher = ofType(Person.class)
                 .where(Person::getFirstName, is("Steve"))
                 .where(Person::getSurName, is("Jones"))
@@ -189,7 +189,7 @@ public class ChainableMatcherTest {
     }
 
     @Test
-    public void testCustomLambdaName() throws Exception {
+    public void testCustomLambdaName() {
         Person maria = Person.name("Maria", "Wilson").gender(Gender.FEMALE).age(31).awesome(true);
         Person james = Person.name("James", "Wilson").gender(Gender.MALE).age(33).awesome(false);
         Couple couple = couple().woman(maria).man(james);
@@ -203,7 +203,7 @@ public class ChainableMatcherTest {
     }
 
     @Test
-    public void testCreateFromTyped() throws Exception {
+    public void testCreateFromTyped() {
         List<String> strings = singletonList("String value");
 
         assertThat(strings, is(ofType(new Typed<List<String>>() {})
@@ -213,14 +213,14 @@ public class ChainableMatcherTest {
 
     // Protected method
     @Test
-    public void testDescribe() throws Exception {
+    public void testDescribe() {
         assertThat(ChainableMatcher.describe(Person::getAge), is("age"));
         assertThat(ChainableMatcher.describe(Person::isAwesome), is("awesome"));
         assertThat(ChainableMatcher.describe((SerializableFunction<List, Integer>) List::size), is("size()"));
     }
 
     @Test
-    public void testDescribe_appendTo() throws Exception {
+    public void testDescribe_appendTo() {
         String field = "field";
 
         assertThat(ChainableMatcher.describe(Person::getAge, field), is("field.age"));
