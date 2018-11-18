@@ -137,7 +137,7 @@ Now when the `Files.probeContentType` method throws an exception it will be wrap
 still catch this exception, but since it's a _RuntimeException_ it is allowed in the `Stream.map` method.
 
 Many _Runtime_ equivalents of checked types are available as part of Synapse (see the
-`com.impressiveinteractive.synapse.exception.runtime` package), but you could also supply your own method reference
+`com.impressiveinteractive.synapse.core.exception.runtime` package), but you could also supply your own method reference
 that creates your own _RuntimeException_.
 
 It is also possible wrap the exception temporarily and unwrap it once the stream completes. To do this you can use the
@@ -160,7 +160,7 @@ You can also throw it yourself by using `WrappedIOException.getCause()`, which r
 directly.
 
 Many _Wrapped_ equivalents of checked types are also available as part of Synapse (see the
-`com.impressiveinteractive.synapse.exception.wrapped` package), but you could also supply your own method reference
+`com.impressiveinteractive.synapse.core.exception.wrapped` package), but you could also supply your own method reference
 that creates your own _WrappedException_.
 
 The `Exceptions.wrapExceptional` method works on _Consumer_, _Function_ and _Supplier_ type lambdas. If the type of
