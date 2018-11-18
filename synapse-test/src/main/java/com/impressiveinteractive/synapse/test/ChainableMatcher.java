@@ -1,7 +1,7 @@
 package com.impressiveinteractive.synapse.test;
 
-import com.impressiveinteractive.synapse.lambda.SerializableFunction;
-import com.impressiveinteractive.synapse.reflect.Typed;
+import com.impressiveinteractive.synapse.core.lambda.SerializableFunction;
+import com.impressiveinteractive.synapse.core.reflect.Typed;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
