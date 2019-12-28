@@ -1,9 +1,9 @@
 package com.impressiveinteractive.synapse.reflect;
 
-import com.impressiveinteractive.synapse.exception.Exceptions;
-
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+
+import static com.impressiveinteractive.synapse.require.Guard.requireArgument;
 
 /**
  * Used to capture generic types. To use it you need to extend {@link Typed} with the actual concrete type that should
@@ -12,7 +12,7 @@ import java.lang.reflect.Type;
  * <pre>
  * Typed&lt;List&lt;String&gt;&gt; listOfStrings = new Typed&lt;List&lt;String&gt;&gt;() {};
  * </pre>
- *
+ * <p>
  * Based on the TypeToken of Guava, but heavily simplified. Consider using Guava's TypeToken for more complex
  * operations.
  *
@@ -37,11 +37,11 @@ public abstract class Typed<T> {
      */
     protected Typed() {
         Type superType = getClass().getGenericSuperclass();
-        if (!(superType instanceof ParameterizedType))
-            throw Exceptions.format(IllegalArgumentException::new, "Type {} is not a parameterized type.", superType);
+        requireArgument(superType instanceof ParameterizedType,
+                "Type {} is not a parameterized type.", superType);
         Type candidate = ((ParameterizedType) superType).getActualTypeArguments()[0];
-        if (!(candidate instanceof Class) && !(candidate instanceof ParameterizedType))
-            throw Exceptions.format(IllegalArgumentException::new, "Type {} is not concrete.", candidate);
+        requireArgument(candidate instanceof Class || candidate instanceof ParameterizedType,
+                "Type {} is not concrete.", candidate);
         this.type = candidate;
     }
 
