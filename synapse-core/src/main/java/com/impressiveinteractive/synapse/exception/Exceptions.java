@@ -1,5 +1,8 @@
 package com.impressiveinteractive.synapse.exception;
 
+import com.impressiveinteractive.synapse.lambda.Lambdas;
+import com.impressiveinteractive.synapse.lambda.SerializableFunction;
+
 import java.util.Arrays;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -14,6 +17,146 @@ public final class Exceptions {
 
     private Exceptions() {
         throw new AssertionError("Illegal private constructor call.");
+    }
+
+    // Attempt 1: In this attempt I tried to use generics to define all possibly thrown exceptions and then consume
+    // them one by one until none remained. This is compile time safe here, but breaks down when supplying the
+    // consumers, which I've only been able to make work when accepting Exception.
+    public static <E1 extends Exception, E2 extends Exception, E3 extends Exception> void wrap(
+            TriExceptionalRunnable<E1, E2, E3> runnable,
+            BiExceptionalFunction<Exception, RuntimeException, E2, E3> consumer1,
+            ExceptionalFunction<Exception, RuntimeException, E3> consumer2,
+            Function<Exception, RuntimeException> consumer3) {
+        try {
+            runnable.run();
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            throw wrap(
+                    (BiExceptionalCallable<RuntimeException, E2, E3>) () -> {
+                        throw consumer1.apply(e);
+                    },
+                    consumer2,
+                    consumer3);
+        }
+    }
+
+    public static <V, E1 extends Exception, E2 extends Exception, E3 extends Exception> V wrap(
+            TriExceptionalCallable<V, E1, E2, E3> callable,
+            BiExceptionalFunction<Exception, RuntimeException, E2, E3> consumer1,
+            ExceptionalFunction<Exception, RuntimeException, E3> consumer2,
+            Function<Exception, RuntimeException> consumer3) {
+        try {
+            return callable.call();
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            throw wrap(
+                    (BiExceptionalCallable<RuntimeException, E2, E3>) () -> {
+                        throw consumer1.apply(e);
+                    },
+                    consumer2,
+                    consumer3);
+        }
+    }
+
+    public static <E1 extends Exception, E2 extends Exception> void wrap(
+            BiExceptionalRunnable<E1, E2> runnable,
+            ExceptionalFunction<Exception, RuntimeException, E2> consumer1,
+            Function<Exception, RuntimeException> consumer2) {
+        try {
+            runnable.run();
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            throw wrap(
+                    (ExceptionalCallable<RuntimeException, E2>) () -> {
+                        throw consumer1.apply(e);
+                    },
+                    consumer2);
+        }
+    }
+
+    public static <V, E1 extends Exception, E2 extends Exception> V wrap(
+            BiExceptionalCallable<V, E1, E2> callable,
+            ExceptionalFunction<Exception, RuntimeException, E2> consumer1,
+            Function<Exception, RuntimeException> consumer2) {
+        try {
+            return callable.call();
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            throw wrap(
+                    (ExceptionalCallable<RuntimeException, E2>) () -> {
+                        throw consumer1.apply(e);
+                    },
+                    consumer2);
+        }
+    }
+
+    private static <E1 extends Exception> void wrap(
+            ExceptionalRunnable<E1> runnable,
+            Function<Exception, RuntimeException> consumer) {
+        try {
+            runnable.run();
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            throw consumer.apply(e);
+        }
+    }
+
+    private static <V, E1 extends Exception> V wrap(
+            ExceptionalCallable<V, E1> callable,
+            Function<Exception, RuntimeException> consumer) {
+        try {
+            return callable.call();
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            throw consumer.apply(e);
+        }
+    }
+
+    // Attempt 2: Significantly simpler than attempt 1, but requires the use of lambda serialization and reflection,
+    // which isn't great. The deal breaker however is the fact that the BiExceptionalCallable can not determine the
+    // exception types from a method reference, defaulting to Exception for both E1 and E2, even if the signature
+    // clearly defines two types.
+    public static <V, E1 extends Exception, E2 extends Exception> V wrap(
+            BiExceptionalCallable<V, E1, E2> callable,
+            SerializableFunction<E1, ? extends RuntimeException> wrapper1,
+            SerializableFunction<E2, ? extends RuntimeException> wrapper2
+    ) {
+        try {
+            return callable.call();
+        } catch (Exception e) {
+            if (Lambdas.getRawParameterType(wrapper1.serialized(), 0).isAssignableFrom(e.getClass())) {
+                throw wrapper1.apply((E1) e);
+            } else if (Lambdas.getRawParameterType(wrapper2.serialized(), 0).isAssignableFrom(e.getClass())) {
+                throw wrapper2.apply((E2) e);
+            }
+            throw format(IllegalStateException::new, "Wrappers did not wrap type {}.", e.getClass(), e);
+        }
+    }
+
+    public static <V, E1 extends Exception, E2 extends Exception, E3 extends Exception> V wrap(
+            TriExceptionalCallable<V, E1, E2, E3> callable,
+            SerializableFunction<E1, ? extends RuntimeException> wrapper1,
+            SerializableFunction<E2, ? extends RuntimeException> wrapper2,
+            SerializableFunction<E3, ? extends RuntimeException> wrapper3
+    ) {
+        try {
+            return callable.call();
+        } catch (Exception e) {
+            if (Lambdas.getRawParameterType(wrapper1.serialized(), 0).isAssignableFrom(e.getClass())) {
+                throw wrapper1.apply((E1) e);
+            } else if (Lambdas.getRawParameterType(wrapper2.serialized(), 0).isAssignableFrom(e.getClass())) {
+                throw wrapper2.apply((E2) e);
+            } else if (Lambdas.getRawParameterType(wrapper3.serialized(), 0).isAssignableFrom(e.getClass())) {
+                throw wrapper3.apply((E3) e);
+            }
+            throw format(IllegalStateException::new, "Wrappers did not wrap type {}.", e.getClass(), e);
+        }
     }
 
     /**
