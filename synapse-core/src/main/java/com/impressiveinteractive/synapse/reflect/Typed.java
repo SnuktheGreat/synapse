@@ -3,7 +3,7 @@ package com.impressiveinteractive.synapse.reflect;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 
-import static com.impressiveinteractive.synapse.require.Guard.requireArgument;
+import static com.impressiveinteractive.synapse.require.Require.argument;
 
 /**
  * Used to capture generic types. To use it you need to extend {@link Typed} with the actual concrete type that should
@@ -37,11 +37,11 @@ public abstract class Typed<T> {
      */
     protected Typed() {
         Type superType = getClass().getGenericSuperclass();
-        requireArgument(superType instanceof ParameterizedType,
-                "Type {} is not a parameterized type.", superType);
+        argument(superType, t -> t instanceof ParameterizedType,
+                "Type {} is not a parameterized type.");
         Type candidate = ((ParameterizedType) superType).getActualTypeArguments()[0];
-        requireArgument(candidate instanceof Class || candidate instanceof ParameterizedType,
-                "Type {} is not concrete.", candidate);
+        argument(candidate, c -> c instanceof Class || candidate instanceof ParameterizedType,
+                "Type {} is not concrete.");
         this.type = candidate;
     }
 

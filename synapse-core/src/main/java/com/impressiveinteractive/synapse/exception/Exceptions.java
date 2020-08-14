@@ -1,10 +1,26 @@
 package com.impressiveinteractive.synapse.exception;
 
+import com.impressiveinteractive.synapse.exception.runtime.RuntimeClassNotFoundException;
+import com.impressiveinteractive.synapse.exception.runtime.RuntimeExecutionException;
+import com.impressiveinteractive.synapse.exception.runtime.RuntimeIOException;
+import com.impressiveinteractive.synapse.exception.runtime.RuntimeIllegalAccessException;
+import com.impressiveinteractive.synapse.exception.runtime.RuntimeInstantiationException;
+import com.impressiveinteractive.synapse.exception.runtime.RuntimeInterruptedException;
+import com.impressiveinteractive.synapse.exception.runtime.RuntimeInvocationTargetException;
+import com.impressiveinteractive.synapse.exception.runtime.RuntimeNoSuchFieldException;
+import com.impressiveinteractive.synapse.exception.runtime.RuntimeNoSuchMethodException;
+import com.impressiveinteractive.synapse.exception.runtime.RuntimeReflectiveOperationException;
+
+import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
+import java.util.concurrent.ExecutionException;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 /**
  * Provides utility methods to deal with {@link Throwable} instances. Called {@link Exceptions} (mostly) to avoid
@@ -77,6 +93,128 @@ public final class Exceptions {
         }
         return reduceStackTrace(constructor.apply(exceptionalMessage.getMessage()));
     }
+
+    public static RuntimeClassNotFoundException uncheck(ClassNotFoundException e) {
+        return new RuntimeClassNotFoundException(e);
+    }
+
+    public static RuntimeClassNotFoundException uncheck(ClassNotFoundException e, String message, Object... args) {
+        return Exceptions.format(RuntimeClassNotFoundException::new,
+                message, Stream.concat(Arrays.stream(args), Stream.of(e)).toArray(Object[]::new));
+    }
+
+    public static RuntimeExecutionException uncheck(ExecutionException e) {
+        return new RuntimeExecutionException(e);
+    }
+
+    public static RuntimeExecutionException uncheck(ExecutionException e, String message, Object... args) {
+        return Exceptions.format(RuntimeExecutionException::new,
+                message, Stream.concat(Arrays.stream(args), Stream.of(e)).toArray(Object[]::new));
+    }
+
+    public static RuntimeIllegalAccessException uncheck(IllegalAccessException e) {
+        return new RuntimeIllegalAccessException(e);
+    }
+
+    public static RuntimeIllegalAccessException uncheck(IllegalAccessException e, String message, Object... args) {
+        return Exceptions.format(RuntimeIllegalAccessException::new,
+                message, Stream.concat(Arrays.stream(args), Stream.of(e)).toArray(Object[]::new));
+    }
+
+    public static RuntimeInstantiationException uncheck(InstantiationException e) {
+        return new RuntimeInstantiationException(e);
+    }
+
+    public static RuntimeInstantiationException uncheck(InstantiationException e, String message, Object... args) {
+        return Exceptions.format(RuntimeInstantiationException::new,
+                message, Stream.concat(Arrays.stream(args),
+                        Stream.of(e)).toArray(Object[]::new));
+    }
+
+    public static RuntimeInterruptedException uncheck(InterruptedException e) {
+        return RuntimeInterruptedException.interruptAndCreate(e);
+    }
+
+    public static RuntimeInterruptedException uncheck(InterruptedException e, String message, Object... args) {
+        return Exceptions.format(RuntimeInterruptedException::interruptAndCreate,
+                message, Stream.concat(Arrays.stream(args), Stream.of(e)).toArray(Object[]::new));
+    }
+
+    public static RuntimeInvocationTargetException uncheck(InvocationTargetException e) {
+        return new RuntimeInvocationTargetException(e);
+    }
+
+    public static RuntimeInvocationTargetException uncheck(InvocationTargetException e, String message, Object... args) {
+        return Exceptions.format(RuntimeInvocationTargetException::new,
+                message, Stream.concat(Arrays.stream(args), Stream.of(e)).toArray(Object[]::new));
+    }
+
+    public static RuntimeIOException uncheck(IOException e) {
+        return new RuntimeIOException(e);
+    }
+
+    public static RuntimeIOException uncheck(IOException e, String message, Object... args) {
+        return Exceptions.format(RuntimeIOException::new,
+                message, Stream.concat(Arrays.stream(args), Stream.of(e)).toArray(Object[]::new));
+    }
+
+    public static RuntimeNoSuchFieldException uncheck(NoSuchFieldException e) {
+        return new RuntimeNoSuchFieldException(e);
+    }
+
+    public static RuntimeNoSuchFieldException uncheck(NoSuchFieldException e, String message, Object... args) {
+        return Exceptions.format(RuntimeNoSuchFieldException::new,
+                message, Stream.concat(Arrays.stream(args), Stream.of(e)).toArray(Object[]::new));
+    }
+
+    public static RuntimeNoSuchMethodException uncheck(NoSuchMethodException e) {
+        return new RuntimeNoSuchMethodException(e);
+    }
+
+    public static RuntimeNoSuchMethodException uncheck(NoSuchMethodException e, String message, Object... args) {
+        return Exceptions.format(RuntimeNoSuchMethodException::new,
+                message, Stream.concat(Arrays.stream(args), Stream.of(e)).toArray(Object[]::new));
+    }
+
+    public static RuntimeReflectiveOperationException uncheck(ReflectiveOperationException e) {
+        return new RuntimeReflectiveOperationException(e);
+    }
+
+    public static RuntimeReflectiveOperationException uncheck(ReflectiveOperationException e, String message, Object... args) {
+        return Exceptions.format(RuntimeReflectiveOperationException::new,
+                message, Stream.concat(Arrays.stream(args), Stream.of(e)).toArray(Object[]::new));
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <E extends Exception> Runnable wrapExceptionalRunnable(
+            ExceptionalRunnable<E> predicate,
+            Function<E, ? extends RuntimeException> wrapper) {
+        return () -> {
+            try {
+                predicate.run();
+            } catch (RuntimeException e) {
+                throw e;
+            } catch (Exception e) {
+                throw wrapper.apply((E) e);
+            }
+        };
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <T, E extends Exception> Predicate<T> wrapExceptionalPredicate(
+            ExceptionalPredicate<T, E> predicate,
+            Function<E, ? extends RuntimeException> wrapper) {
+        return t -> {
+            try {
+                return predicate.test(t);
+            } catch (RuntimeException e) {
+                throw e;
+            } catch (Exception e) {
+                throw wrapper.apply((E) e);
+            }
+        };
+    }
+
 
     /**
      * Wrap the given {@link ExceptionalConsumer} in a regular {@link Consumer}. When the exceptional consumer throws
@@ -215,6 +353,18 @@ public final class Exceptions {
                 throw wrapper.apply((E) e);
             }
         };
+    }
+
+    public static <T, E extends Exception> T wrap(
+            ExceptionalSupplier<T, E> supplier,
+            Function<E, ? extends RuntimeException> wrapper){
+        return wrapExceptional(supplier, wrapper).get();
+    }
+
+    public static <E extends Exception> void wrap(
+            ExceptionalRunnable<E> runnable,
+            Function<E, ? extends RuntimeException> wrapper){
+        wrapExceptionalRunnable(runnable, wrapper).run();
     }
 
     /**
